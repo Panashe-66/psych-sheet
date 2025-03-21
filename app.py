@@ -3,10 +3,9 @@ from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_
 from login import get_token, get_user_info
 
 app = Flask(__name__)
-app.config["DEBUG"] = True
 app.secret_key = 'pspsych'
 
-comps_per_load = 75
+comps_per_load = 25
 
 @app.route('/auth')
 def auth():
@@ -90,4 +89,4 @@ def psych_sheet(comp):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    app.run()
