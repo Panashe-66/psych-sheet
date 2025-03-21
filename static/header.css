@@ -1,0 +1,108 @@
+@import url("base.css");
+
+.pfp {
+    border-radius: 50%;
+    width: 45px;
+    cursor: pointer;
+}
+
+.pfp:hover {
+    opacity: 0.8;
+}
+
+.pfp,
+.login-a {
+    margin-left: auto;
+    margin-right: 25px;
+    height: fit-content;
+}
+
+.login-a {
+    margin-right: 35px;
+}
+
+.login-button,
+.logout-button {
+    color: var(--primary);
+    font-weight: 600;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    margin: 0;
+    cursor: pointer;
+    font-size: 15.5px;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    padding: 9px;
+    display: flex;
+    height: 45px;
+    width: 100%;
+    background-color: var(--bg);
+    box-shadow: 0px 4px 6px rgba(242, 242, 242, 0.1);
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1;
+}
+
+.logout-button {
+    position: absolute;
+    top: 65px;
+    right: 35px;
+    background-color: var(--bg);
+    box-shadow: 0px 4px 6px rgba(242, 242, 242, 0.1);
+    padding: 10px 16px;
+    border-radius: 7px;
+}
+
+.logout-button:hover {
+    background-color: #232b31;
+}
+
+.spinner {
+    border: 5px solid var(--primary);
+    border-top: 5px solid #fff;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    right: 0;
+    margin: 35px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.breadcrumbs {
+    padding: 10px;
+}
+
+.breadcrumb {
+    display: inline-block;
+}
+
+.breadcrumb-link {
+    color: rgb(0, 140, 255);
+    font-weight: bold;
+    font-size: 17px;
+}
+
+.breadcrumb-last {
+    color: rgb(141, 52, 231);
+    cursor: pointer;
+}
+
+.breadcrumb:not(:last-of-type)::after {
+    content: '/';
+    margin: 0 5px;
+}
