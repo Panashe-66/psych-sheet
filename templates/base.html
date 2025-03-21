@@ -1,0 +1,65 @@
+<head>
+    <link rel="stylesheet" href="../static/header.css">
+</head>
+<body>
+    <header>
+        <ul class="breadcrumbs">
+            {% for breadcrumb, url in breadcrumbs %}
+                <li class="breadcrumb">
+                    {% if loop.last %}
+                        <span class="breadcrumb-link breadcrumb-last">{{ breadcrumb }}</span>
+                    {% else %}
+                        <a href="{{ url }}" class="breadcrumb-link">{{ breadcrumb }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+
+        {% if not session.get("logged_in") %}
+            <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=http://localhost:8000/auth&response_type=code&state={{ request.url }}" class="login-a">
+                <button class="login-button">Login</button>
+            </a>
+
+        {% else %}
+            <a href="{{ url_for('deauth', url=request.url) }}" class="logout">
+                <button class="logout-button" onclick="spinner_animation()">Log Out</button>
+            </a>
+
+            <div class="spinner"></div>
+
+            <img src="{{ session.get('pfp') }}" class="pfp" onclick="toggle_logout()">
+        {% endif %}
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <script>
+        document.querySelector('.logout').style.display = 'none';
+        document.querySelector('.spinner').style.display = 'none';
+
+        function toggle_logout() {
+            const logout = document.querySelector('.logout');
+            
+            if (logout.style.display === 'none') {
+                logout.style.display = 'block';
+            } else {
+                logout.style.display = 'none';
+            }
+        }
+
+        function spinner_animation() {
+            document.querySelector('.spinner').style.display = 'block';
+            document.querySelector('.pfp').style.display = 'none';
+            document.querySelector('.logout').style.display = 'none';
+        }
+
+        document.addEventListener('click', function(event) {
+            const logout = document.querySelector('.logout');
+            const pfp = document.querySelector('.pfp');
+            
+            if (!pfp.contains(event.target) && !logout.contains(event.target)) {
+                logout.style.display = 'none';
+            }
+        });
+    </script>
+</body>

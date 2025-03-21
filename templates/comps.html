@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psych Sheet</title>
+    <link rel="stylesheet" href="../static/psych.css">
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+
+{% for when, comps in comps.items() %}
+    {% if comps %}
+        <h1>{{ when.capitalize() }} Competitions</h1>
+        <div class="comp-container" {% if when == 'upcoming' %} id="upcoming-comps" {% endif %}>
+        {% for comp in comps %}
+            <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                <div class="comp-button">
+                    <div class="flag">{{ comp.flag }}</div>
+                    <div class="comp-button-text">
+                        <p class="comp-name">{{ comp.name }}</p>
+                        <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+        </div>
+    {% endif %}
+{% endfor %}
+
+    <div>
+        <h2 class="loading-text">Loading More...</h2>
+        <div class="loading-container">
+            <div class="loading-bar">
+                <div class="loading-bar-inner"></div>
+            </div>
+        </div>
+        <h2 class="no-more-comps">No More Competitions</h2>
+    </div>
+
+    <p id="competition-count"></p>
+    
+    <script>
+        var page = 2;
+
+        var done_loading = false
+        document.querySelector('.no-more-comps').style.display = 'none';
+        document.querySelector('.loading-container').style.display = 'block';
+
+        $(window).scroll(() => {
+            if (!done_loading) {
+                done_loading = true
+                get_more_comps(page);
+                page += 1;
+            }
+        });
+
+        function get_more_comps(page) {
+            $.get(`/more_comps?page=${page}`, (comps) => {
+                if (comps.length === 0) {
+                    done_loading = true;
+                    document.querySelector('.loading-container').style.display = 'none';
+                    document.querySelector('.loading-text').style.display = 'none';
+                    document.querySelector('.no-more-comps').style.display = 'block';
+                    return;
+                } else {
+                    done_loading = false;
+                }
+        
+                for (var index = 0; index < comps.length; index++) {
+                    var comp = comps[index];
+        
+                    var comps_html = `
+                        <a href="/psych_sheet/${comp.id}">
+                            <div class="comp-button">
+                                <div class="flag">${comp.flag}</div>
+                                <div class="comp-button-text">
+                                    <p class="comp-name">${comp.name}</p>
+                                    <p class="comp-details">${comp.date} - ${comp.city}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+
+                    $('#upcoming-comps').append(comps_html);
+                }
+        
+                done_loading = false;
+            });
+        }
+    </script>
+
+    {% endblock %}
+</body>
+</html>
