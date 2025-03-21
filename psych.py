@@ -1,7 +1,6 @@
 import requests
 import math
 from concurrent.futures import ThreadPoolExecutor
-import time
 from datetime import datetime, timedelta
 from flag import flag
 
@@ -217,9 +216,3 @@ def get_competitors(comp_id):
         competitors = list(executor.map(lambda c: c if valid_competitor(c) else None, competitors))
 
     return [c for c in competitors if c]
-
-# start = time.perf_counter()
-# print(get_psych_sheet(competitors('LibertyScienceCenterOpenA2025'), '222', 50))
-# end = time.perf_counter()
-
-# print(f'{end-start}')
