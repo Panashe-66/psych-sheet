@@ -16,7 +16,7 @@
         </ul>
 
         {% if not session.get("logged_in") %}
-            <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=http://localhost:8000/auth&response_type=code&state={{ request.url }}" class="login-a">
+            <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=https://flask-ry9l.onrender.com/auth&response_type=code&state={{ request.url }}" class="login-a">
                 <button class="login-button">Login</button>
             </a>
 
