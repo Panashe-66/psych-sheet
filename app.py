@@ -1,11 +1,15 @@
 from flask import Flask, request, render_template, session, redirect, url_for, jsonify
 from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
 from login import get_token, get_user_info
+import asyncio
 
 app = Flask(__name__)
 app.secret_key = 'pspsych'
 
 comps_per_load = 25
+
+def run_async(func, *args):
+    return asyncio.run(func(*args))
 
 @app.route('/auth')
 def auth():
@@ -47,12 +51,12 @@ def comps():
     logged_in = session.get('logged_in', False)
 
     if logged_in:
-        your_comps = get_comps('user', user_id=session.get('user_id'))
+        your_comps = run_async(get_comps, 'user', user_id=session.get('user_id'))
     else:
         your_comps = None
 
-    ongoing_comps = get_comps('ongoing')
-    upcoming_comps = get_comps('upcoming', comps_per_load, 1)
+    ongoing_comps = run_async(get_comps, 'ongoing')
+    upcoming_comps = run_async(get_comps, 'upcoming', comps_per_load, 1)
 
     breadcrumbs = zip(['Home', 'Psych Sheet'], [url_for('home'), ''])
     
@@ -62,22 +66,22 @@ def comps():
 @app.route("/more_comps", methods=["GET"])
 def more_comps():
     page = int(request.args.get("page", 2))
-    upcoming_comps = get_comps('upcoming', comps_per_load, page)
+    upcoming_comps = run_async(get_comps, 'upcoming', comps_per_load, page)
 
     return jsonify(upcoming_comps)
 
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
 def psych_sheet(comp):
-    competitors = get_competitors(comp)
-    name = get_comp_name(comp)
-    events = get_event_ids(comp)
+    competitors = run_async(get_competitors, comp)
+    name = run_async(get_comp_name, comp)
+    events = run_async(get_event_ids, comp)
 
     if request.method == "POST":
         solves = int(request.form["solves"])
         event = request.form.get('event')
 
         if event in events:
-            psych_sheet = get_psych_sheet(competitors, event, solves)
+            psych_sheet = run_async(get_psych_sheet, competitors, event, solves)
 
             return jsonify(psych_sheet)
 
