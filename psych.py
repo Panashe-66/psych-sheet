@@ -3,8 +3,6 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from flag import flag
-import asyncio
-import aiohttp
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -58,18 +56,15 @@ def date_range(start, end):
     else: #Multimonth
         return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
 
-async def get_avg(wca_id, event, solves):
+def get_avg(wca_id, event, solves):
     url = f'{API}/persons/{wca_id}/results'
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status != 200:
-                return ''
+    response = requests.get(url)
 
-            data = await response.json()
+    if response.status != 200:
+        return None
     
     time_list = [
-        attempt for result in data
+        attempt for result in response.json()
         if result["event_id"] == event
         for attempt in result.get('attempts', [])
         if attempt > 0
@@ -92,24 +87,25 @@ async def get_avg(wca_id, event, solves):
 
     return avg
 
-async def get_psych_sheet(competitors, event, solves):
+def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
-    async def process_competitor(competitor):
+    def process_competitor(competitor):
         wca_id = competitor.get("wcaId")
         name = competitor.get("name")
         events = (competitor.get("registration") or {}).get("eventIds", [])
 
         if wca_id and events and event in events:
-            avg = await get_avg(wca_id, event, solves)
+            avg =  get_avg(wca_id, event, solves)
 
             if avg:
                 return avg, name
             return None
 
-    tasks = [process_competitor(competitor) for competitor in competitors]
-    results = await asyncio.gather(*tasks)
-    results = [result for result in results if result]
+    with ThreadPoolExecutor(max_workers=75) as executor:
+        results = [
+            result for result in executor.map(process_competitor, competitors) if result
+        ]
 
     results.sort(reverse=True if event == '333mbf' else False)
     results = [(sec_to_hms(avg), name) for avg, name in results]
