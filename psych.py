@@ -3,7 +3,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from flag import flag
-
+import time
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -89,6 +89,11 @@ def get_avg(wca_id, event, solves):
 
     return avg
 
+def split_psych(data):
+    for i in range(0, len(data), 50):
+        yield data[i:i + 50]
+
+
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
@@ -104,10 +109,14 @@ def get_psych_sheet(competitors, event, solves):
                 return avg, name
             return None
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        results = [
-            result for result in executor.map(process_competitor, competitors) if result
-        ]
+
+    chunks = list(split_psych(competitors))
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = []
+        for chunk in chunks:
+            chunk_results = list(executor.map(process_competitor, chunk))
+            results.extend([result for result in chunk_results if result])
     
     results.sort(reverse=True if event == '333mbf' else False)
 
