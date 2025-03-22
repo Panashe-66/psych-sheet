@@ -1,10 +1,6 @@
 from flask import Flask, request, render_template, session, redirect, url_for, jsonify
 from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
 from login import get_token, get_user_info
-import asyncio
-
-def run_async(func, *args):
-    return asyncio.run(func(*args))
 
 app = Flask(__name__)
 app.secret_key = 'pspsych'
@@ -81,7 +77,7 @@ def psych_sheet(comp):
         event = request.form.get('event')
 
         if event in events:
-            psych_sheet =  get_psych_sheet(competitors, event, solves)
+            psych_sheet = get_psych_sheet(competitors, event, solves)
 
             return jsonify(psych_sheet)
 
