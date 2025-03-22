@@ -71,7 +71,7 @@ def more_comps():
     return jsonify(upcoming_comps)
 
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
-async def psych_sheet(comp):
+def psych_sheet(comp):
     competitors = get_competitors(comp)
     name = get_comp_name(comp)
     events = get_event_ids(comp)
@@ -81,7 +81,7 @@ async def psych_sheet(comp):
         event = request.form.get('event')
 
         if event in events:
-            psych_sheet = await get_psych_sheet(competitors, event, solves)
+            psych_sheet =  get_psych_sheet(competitors, event, solves)
 
             return jsonify(psych_sheet)
 
