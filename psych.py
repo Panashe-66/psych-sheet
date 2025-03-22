@@ -3,6 +3,8 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from flag import flag
+import asyncio
+import aiohttp
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -56,19 +58,22 @@ def date_range(start, end):
     else: #Multimonth
         return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
 
-def get_avg(wca_id, event, solves):
+async def get_avg(wca_id, event, solves):
     url = f'{API}/persons/{wca_id}/results'
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return ''
     
-    time_list = []
-    for result in response.json():
-        if result["event_id"] == event:
-            time_list.extend(attempt for attempt in result.get('attempts', []) if attempt > 0)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status != 200:
+                return ''
 
-    time_list = time_list[-solves:]
+            data = await response.json()
+    
+    time_list = [
+        attempt for result in data
+        if result["event_id"] == event
+        for attempt in result.get('attempts', [])
+        if attempt > 0
+    ][::-1][:solves]
 
     if event == '333mbf':
         mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
@@ -87,28 +92,26 @@ def get_avg(wca_id, event, solves):
 
     return avg
 
-def get_psych_sheet(competitors, event, solves):
+async def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
-    def process_competitor(competitor):
+    async def process_competitor(competitor):
         wca_id = competitor.get("wcaId")
         name = competitor.get("name")
         events = (competitor.get("registration") or {}).get("eventIds", [])
 
         if wca_id and events and event in events:
-            avg = get_avg(wca_id, event, solves)
+            avg = await get_avg(wca_id, event, solves)
 
             if avg:
                 return avg, name
             return None
 
-    with ThreadPoolExecutor(max_workers=75) as executor:
-        results = [
-            result for result in executor.map(process_competitor, competitors) if result
-        ]
-    
-    results.sort(reverse=True if event == '333mbf' else False)
+    tasks = [process_competitor(competitor) for competitor in competitors]
+    results = await asyncio.gather(*tasks)
+    results = [result for result in results if result]
 
+    results.sort(reverse=True if event == '333mbf' else False)
     results = [(sec_to_hms(avg), name) for avg, name in results]
 
     prev_rank, prev_avg = 0, 0
