@@ -1,9 +1,11 @@
 from flask import Flask, request, render_template, session, redirect, url_for, jsonify
 from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
+from werkzeug.serving import WSGIRequestHandler
 from login import get_token, get_user_info
 
 app = Flask(__name__)
 app.secret_key = 'pspsych'
+WSGIRequestHandler.request_timeout = 300
 
 comps_per_load = 25
 
