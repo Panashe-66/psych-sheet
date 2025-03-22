@@ -1,4 +1,4 @@
-from quart import Flask, request, render_template, session, redirect, url_for, jsonify
+from flask import Flask, request, render_template, session, redirect, url_for, jsonify
 from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
 from login import get_token, get_user_info
 import asyncio
@@ -6,7 +6,7 @@ import asyncio
 def run_async(func, *args):
     return asyncio.run(func(*args))
 
-app = Quart(__name__)
+app = Flask(__name__)
 app.secret_key = 'pspsych'
 
 comps_per_load = 25
