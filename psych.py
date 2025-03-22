@@ -63,14 +63,13 @@ def get_avg(wca_id, event, solves):
     if response.status_code != 200:
         return ''
     
-    time_list = [
-        attempt for result in response.json()
-        if result["event_id"] == event
-        for attempt in result.get('attempts', [])
-        if attempt > 0
-    ][::-1][:solves]
+    time_list = []
+    for result in response.json():
+        if result["event_id"] == event:
+            time_list.extend(attempt for attempt in result.get('attempts', []) if attempt > 0)
 
-    
+    time_list = time_list[-solves:]
+
     if event == '333mbf':
         mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
         time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
