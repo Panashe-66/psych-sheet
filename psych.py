@@ -103,7 +103,7 @@ def get_psych_sheet(competitors, event, solves):
                 return avg, name
             return None
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=75) as executor:
         results = [
             result for result in executor.map(process_competitor, competitors) if result
         ]
