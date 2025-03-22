@@ -60,7 +60,7 @@ def get_avg(wca_id, event, solves):
     url = f'{API}/persons/{wca_id}/results'
     response = requests.get(url)
 
-    if response.status != 200:
+    if response.status_code != 200:
         return None
     
     time_list = [
