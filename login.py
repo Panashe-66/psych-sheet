@@ -1,6 +1,6 @@
 import requests
 
-REDIRECT_URI = 'https://flask-psi-beige.vercel.app/auth'
+REDIRECT_URI = 'https://psych-2o2a.onrender.com/auth'
 CLIENT_ID = 'bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs'
 CLIENT_SECRET = 'z78nXhWnFKVuzY66aYS6nVSKSiayJPkTdtdqordWCkU'
 TOKEN_URL = "https://www.worldcubeassociation.org/oauth/token"
