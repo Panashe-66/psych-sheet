@@ -4,7 +4,7 @@ services:
   flask:
     commands:
       - pip install -r requirements.txt
-      - gunicorn app:app --bind 0.0.0.0:5000
+      - gunicorn app:app
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=production
