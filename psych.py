@@ -3,6 +3,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from flag import flag
+import time
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -64,9 +65,11 @@ def get_avg(wca_id, event, solves):
         return None
     
     time_list = [
-        attempt for result in response.json()
+        result["average"] if result.get("average", 0) > 0 
+        else (attempt * 100 if event == '333fm' else attempt)
+        for result in response.json()
         if result["event_id"] == event
-        for attempt in result.get('attempts', [])
+        for attempt in (result.get("attempts", []) if result.get("average", 0) <= 0 else [result["average"]])
         if attempt > 0
     ][::-1][:solves]
 
@@ -74,14 +77,10 @@ def get_avg(wca_id, event, solves):
         mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
         time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
 
-    elif event != '333fm':
+    else:
         time_list = [time / 100 for time in time_list]
     
     time_list.sort()
-
-    if len(time_list) > 3:
-        trim = max(1, math.ceil(len(time_list) * 0.05))
-        time_list = time_list[trim:-trim]
 
     avg = round(sum(time_list) / len(time_list), 2) if time_list else None
 
@@ -143,7 +142,13 @@ def get_comps(when, per_page=100, page=1, user_id=None):
     comps = response.json()
 
     if when == 'user':
-        comps = sorted(comps.get('upcoming_competitions'), key=lambda comp: comp["start_date"])
+        upcoming_comps = comps.get("upcoming_competitions", [])
+        ongoing_comps = comps.get("ongoing_competitions", [])
+
+        upcoming_comps = sorted(upcoming_comps, key=lambda comp: comp["start_date"])
+        ongoing_comps = sorted(ongoing_comps, key=lambda comp: comp["start_date"])
+
+        comps = ongoing_comps + upcoming_comps
     elif when == 'ongoing':
         comps = [comp for comp in comps if comp["end_date"] >= now]
     elif when =='upcoming':
