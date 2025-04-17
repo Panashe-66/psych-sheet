@@ -3,28 +3,27 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from flag import flag
-import time
 
 API = 'https://api.worldcubeassociation.org'
 
 EVENT_SETTINGS_DATA = [
-    ('333', '3x3', 50),
-    ('222', '2x2', 40),
-    ('444', '4x4', 25),
-    ('555', '5x5', 20),
-    ('666', '6x6', 10),
-    ('777', '7x7', 10),
-    ('333bf', '3x3 Blindfolded', 12),
-    ('333fm', '3x3 Fewest Moves', 6),
-    ('333oh', '3x3 One-Handed', 20),
-    ('clock', 'Clock', 20),
-    ('minx', 'Megaminx', 20),
-    ('pyram', 'Pyraminx', 30),
-    ('skewb', 'Skewb', 30),
-    ('sq1', 'Square-1', 20),
-    ('444bf', '4x4 Blindfolded', 5),
-    ('555bf', '5x5 Blindfolded', 5),
-    ('333mbf', '3x3 Multi-Blind', 5)
+    ('333', '3x3', 10),
+    ('222', '2x2', 9),
+    ('444', '4x4', 5),
+    ('555', '5x5', 4),
+    ('666', '6x6', 3),
+    ('777', '7x7', 3),
+    ('333bf', '3x3 Blindfolded', 4),
+    ('333fm', '3x3 Fewest Moves', 2),
+    ('333oh', '3x3 One-Handed', 4),
+    ('clock', 'Clock', 4),
+    ('minx', 'Megaminx', 4),
+    ('pyram', 'Pyraminx', 6),
+    ('skewb', 'Skewb', 6),
+    ('sq1', 'Square-1', 4),
+    ('444bf', '4x4 Blindfolded', 2),
+    ('555bf', '5x5 Blindfolded', 2),
+    ('333mbf', '3x3 Multi-Blind', 2)
 ]
 
 def sec_to_hms(sec):
@@ -65,20 +64,17 @@ def get_avg(wca_id, event, solves):
         return None
     
     time_list = [
-        result["average"] if result.get("average", 0) > 0 
-        else (attempt * 100 if event == '333fm' else attempt)
+        (attempt / 100 if event != '333mbf' and not (event == '333fm' and result.get("average", 0) <= 0) else attempt)
         for result in response.json()
         if result["event_id"] == event
         for attempt in (result.get("attempts", []) if result.get("average", 0) <= 0 else [result["average"]])
         if attempt > 0
     ][::-1][:solves]
 
+
     if event == '333mbf':
         mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
         time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
-
-    else:
-        time_list = [time / 100 for time in time_list]
     
     time_list.sort()
 
@@ -217,4 +213,4 @@ def get_competitors(comp_id):
     with ThreadPoolExecutor(max_workers=50) as executor:
         competitors = list(executor.map(lambda c: c if valid_competitor(c) else None, competitors))
 
-    return [c for c in competitors if c]
+    return [competitor for competitor in competitors if competitor]
