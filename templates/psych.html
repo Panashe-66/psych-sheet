@@ -61,7 +61,7 @@
                 <button type="button" class="settings-close" aria-label="Close" id="settings-close"></button>
                 <h1 class="settings-header">Adjust Seed Calculation</h1>
                 <p>
-                    The seed result is calculated based on a competitor's average over their last X solves. You can adjust this number here to modify the calculation for each event.
+                    The seed result is calculated based on a competitor's average over their last X averages (If avg is DNF it uses the singles for that avg). You can adjust this number here to modify the calculation for each event.
                 </p>
                     <div class="event-settings">
                         {% for event, event_name, event_value in all_events %}
