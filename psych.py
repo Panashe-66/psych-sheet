@@ -1,7 +1,7 @@
 import requests
 import math
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flag import flag
 
 API = 'https://api.worldcubeassociation.org'
@@ -113,22 +113,22 @@ def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, per_page=100, page=1, user_id=None):
+def get_comps(when, per_page=100, page=1, user_id=None, search=None):
     today = datetime.today().strftime('%Y-%m-%d')
-    now = datetime.utcnow().strftime('%Y-%m-%d')
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     comps = []
     
     if when == 'ongoing':
-        four_days_ago = (datetime.today() - timedelta(days=4)).strftime('%Y-%m-%d')
-
-        url = f"{API}/competitions?start={four_days_ago}&end={today}&sort=start_date&per_page={per_page}&page={page}"
+        url = f"{API}/competitions?sort=start_date,end_date,name&per_page={per_page}&page={page}&ongoing_and_future={today}"
     elif when == 'upcoming':
         tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
-        url = f"{API}/competitions?start={tomorrow}&sort=start_date&per_page={per_page}&page={page}"
+        url = f"{API}/competitions?start={tomorrow}&sort=start_date,end_date,name&per_page={per_page}&page={page}"
     elif when == 'user':
         url = f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true'
+    elif when == 'search':
+        url = f"{API}/competitions?start={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}"
     
     response = requests.get(url)
 
@@ -146,8 +146,8 @@ def get_comps(when, per_page=100, page=1, user_id=None):
 
         comps = ongoing_comps + upcoming_comps
     elif when == 'ongoing':
-        comps = [comp for comp in comps if comp["end_date"] >= now]
-    elif when =='upcoming':
+        comps = [comp for comp in comps if comp["end_date"] >= now and comp["start_date"] <= now]
+    elif when =='upcoming' or when == 'search':
         comps = [comp for comp in comps if "registration_open" in comp and comp["registration_open"] <= now]
 
 

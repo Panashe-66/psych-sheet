@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, session, redirect, url_for, jsonify
 from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
-from login import get_token, get_user_info
+from auth import get_token, get_user_info
 
 app = Flask(__name__)
 app.secret_key = 'pspsych'
@@ -44,6 +44,10 @@ def home():
 
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
+    if request.method == "POST":
+        searched_comps = get_comps('search', comps_per_load, page=1, search=request.form['search'])
+        return jsonify(searched_comps)
+    
     logged_in = session.get('logged_in', False)
 
     if logged_in:
@@ -89,4 +93,4 @@ def psych_sheet(comp):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8000)

@@ -2,18 +2,9 @@
 
 
 .solves {
-    padding: 0;
     width: 50px;
     height: 35px;
-    border-radius: 10px;
     text-align: center;
-    border-color: #303030;
-    border-width: 2px;
-    border-style: solid;
-    color: white;
-    box-shadow: 5px 5px 10px rgba(255, 255, 255, 0.09);
-    background-color: #121212;
-    margin: 0;
     margin-bottom: 5px;
     margin-left: 20px;
 }
@@ -118,7 +109,8 @@ input[type="number"]::-webkit-inner-spin-button {
     color: rgb(207, 207, 207);
 }
 
-.loading-container {
+.loading-container,
+.loading-container-s {
     width: 750px;
     height: 7px;
     background-color: #343434;
@@ -411,4 +403,16 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 150px;
     height: 50px;
     font-size: 15.5px;
+}
+
+.search {
+    width: 550px;
+    height: 45px;
+    border-radius: 300px;
+    padding-left: 14px;
+    margin-bottom: 15px;
+}
+
+.search-active {
+    margin-bottom: 50px;
 }

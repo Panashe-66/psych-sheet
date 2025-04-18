@@ -1,3 +1,7 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,30 +15,33 @@
     <link rel="stylesheet" href="../static/psych.css">
 </head>
 <body>
-    {% extends "base.html" %}
 
-    {% block content %}
+<input type="text" placeholder="Search Competitions" class="search">
 
-{% for when, comps in comps.items() %}
-    {% if comps %}
-        <h1>{{ when.capitalize() }} Competitions</h1>
-        <div class="comp-container" {% if when == 'upcoming' %} id="upcoming-comps" {% endif %}>
-        {% for comp in comps %}
-            <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
-                <div class="comp-button">
-                    <div class="flag">{{ comp.flag }}</div>
-                    <div class="comp-button-text">
-                        <p class="comp-name">{{ comp.name }}</p>
-                        <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+<div class="search-results"></div>
+
+<div class="comps-list">
+    {% for when, comps in comps.items() %}
+        {% if comps %}
+            <h1>{{ when.capitalize() }} Competitions</h1>
+            <div class="comp-container" {% if when == 'upcoming' %} id="upcoming-comps" {% endif %}>
+            {% for comp in comps %}
+                <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                    <div class="comp-button">
+                        <div class="flag">{{ comp.flag }}</div>
+                        <div class="comp-button-text">
+                            <p class="comp-name">{{ comp.name }}</p>
+                            <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                        </div>
                     </div>
-                </div>
-            </a>
-        {% endfor %}
-        </div>
-    {% endif %}
-{% endfor %}
+                </a>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
 
-    <div>
+    <div class="loading-main">
         <h2 class="loading-text">Loading More...</h2>
         <div class="loading-container">
             <div class="loading-bar">
@@ -44,22 +51,32 @@
         <h2 class="no-more-comps">No More Competitions</h2>
     </div>
 
+    <div class="loading-search">
+        <h2 class="loading-text-s">Loading More...</h2>
+        <div class="loading-container-s">
+            <div class="loading-bar">
+                <div class="loading-bar-inner"></div>
+            </div>
+        </div>
+        <h2 class="no-more-comps-s">No More Competitions</h2>
+    </div>
+
+
     <p id="competition-count"></p>
     
     <script>
         var page = 2;
+        var search_page = 1;
 
-        var done_loading = false
+        var done_loading = false;
+        var search_done_loading = false;
+
         document.querySelector('.no-more-comps').style.display = 'none';
         document.querySelector('.loading-container').style.display = 'block';
+        document.querySelector('.loading-search').style.display = 'none';
+        document.querySelector('.loading-main').style.display = 'block';
 
-        $(window).scroll(() => {
-            if (!done_loading) {
-                done_loading = true
-                get_more_comps(page);
-                page += 1;
-            }
-        });
+        get_more_comps(page);
 
         function get_more_comps(page) {
             $.get(`/more_comps?page=${page}`, (comps) => {
@@ -91,11 +108,92 @@
                     $('#upcoming-comps').append(comps_html);
                 }
         
-                done_loading = false;
+                page += 1
+                get_more_comps(page);
             });
         }
+
+        function search() {
+            document.querySelector('.loading-main').style.display = 'none';
+            document.querySelector('.loading-search').style.display = 'block';
+
+            const query = document.querySelector('.search').value.trim();
+
+            document.querySelector('.search-results').style.display = 'none';
+            document.querySelector('.no-more-comps-s').style.display = 'none';
+            document.querySelector('.loading-container-s').style.display = 'block';
+
+            if (!query) {
+                document.querySelector('.comps-list').style.display = 'block';
+                document.querySelector('.loading-text-s').style.display = 'block';
+                document.querySelector('.search').classList.remove('search-active');
+                document.querySelector('.loading-search').style.display = 'none';
+                document.querySelector('.loading-main').style.display = 'block';
+                return;
+            }
+
+            document.querySelector('.search').classList.add('search-active');
+            document.querySelector('.loading-text-s').style.display = 'none';
+            document.querySelector('.comps-list').style.display = 'none';
+
+            const resultsDiv = document.querySelector('.search-results');
+    
+            fetch('/psych_sheet/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({ 'search': query })
+            })
+            .then(res => res.json())           
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                const comps_html = `
+                <div class="comp-container">
+                    ${data.map(comp => `
+                        <a href="/psych_sheet/${comp.id}">
+                            <div class="comp-button">
+                                <div class="flag">${comp.flag}</div>
+                                <div class="comp-button-text">
+                                    <p class="comp-name">${comp.name}</p>
+                                    <p class="comp-details">${comp.date} - ${comp.city}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `).join("")}
+                </div>
+            `;
+
+
+                    resultsDiv.innerHTML = comps_html;
+                    document.querySelector('.no-more-comps-s').style.display = 'block';
+                } else {
+                    resultsDiv.innerHTML = '<h2>No Competitions found</h2>';
+                }
+
+            document.querySelector('.loading-container-s').style.display = 'none';
+            document.querySelector('.loading-text-s').style.display = 'none';
+            document.querySelector('.search-results').style.display = 'block';
+            });
+        }
+
+        let debounce_timeout;
+        let lastValue = "";
+
+        const input = document.querySelector('.search');
+
+        input.addEventListener('input', () => {
+            const currentValue = input.value;
+
+            if (currentValue === lastValue) return;
+            lastValue = currentValue;
+
+            clearTimeout(debounce_timeout);
+            debounce_timeout = setTimeout(search, 200);
+        });
+
     </script>
 
-    {% endblock %}
 </body>
 </html>
+{% endblock %}
