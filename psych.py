@@ -120,15 +120,15 @@ def get_comps(when, per_page=100, page=1, user_id=None, search=None):
     comps = []
     
     if when == 'ongoing':
-        url = f"{API}/competitions?sort=start_date,end_date,name&per_page={per_page}&page={page}&ongoing_and_future={today}"
+        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&include_cancelled=false"
     elif when == 'upcoming':
         tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
-        url = f"{API}/competitions?start={tomorrow}&sort=start_date,end_date,name&per_page={per_page}&page={page}"
+        url = f"{API}/competitions?start={tomorrow}&sort=start_date,end_date,name&per_page={per_page}&page={page}&include_cancelled=false"
     elif when == 'user':
-        url = f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true'
+        url = f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false'
     elif when == 'search':
-        url = f"{API}/competitions?start={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}"
+        url = f"{API}/competitions?start={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false"
     
     response = requests.get(url)
 

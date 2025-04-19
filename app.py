@@ -45,7 +45,7 @@ def home():
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
     if request.method == "POST":
-        searched_comps = get_comps('search', comps_per_load, page=1, search=request.form['search'])
+        searched_comps = get_comps('search', comps_per_load, request.form['page'], search=request.form['search'])
         return jsonify(searched_comps)
     
     logged_in = session.get('logged_in', False)
@@ -93,4 +93,4 @@ def psych_sheet(comp):
 
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=5000)

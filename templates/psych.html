@@ -92,8 +92,11 @@
             document.querySelector('.show-user').style.display = 'none';
 
             const body = document.body;
+            let latestFetchId = 0;
 
             function psych_sheet(event) {
+                const fetchId = ++latestFetchId;
+
                 const event_buttons = Array.from(document.querySelectorAll('.event-button'));
                 const clicked_button = event_buttons.find(button => button.getAttribute('onclick').includes(event));
 
@@ -107,6 +110,9 @@
 
                 const solves_input = document.querySelector(`input[name='solves-${event}']`);
 
+                currentEvent = event;
+                currentSolves = solves_input.value;
+
         
                 fetch("/psych_sheet/{{ comp_id }}", {
                     method: "POST",
@@ -118,6 +124,8 @@
                 })
                 .then(res => res.json())
                 .then(data => {
+                    if (fetchId !== latestFetchId) return;                
+
                     if (Array.isArray(data)) {
                         const table = `
                             <table>
