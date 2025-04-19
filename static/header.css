@@ -1,7 +1,6 @@
 @import url("base.css");
 
 .pfp {
-    border-radius: 50;
     width: 45px;
     cursor: pointer;
 }
