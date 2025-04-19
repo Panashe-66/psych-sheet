@@ -336,6 +336,11 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 15px;
 }
 
+.settings-single {
+    display: inline-block;
+    margin-left: 15px;
+}
+
 .skeleton-psych {
     td:nth-child(1) {
         padding-left: 40px;

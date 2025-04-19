@@ -61,7 +61,7 @@
                 <button type="button" class="settings-close" aria-label="Close" id="settings-close"></button>
                 <h1 class="settings-header">Adjust Seed Calculation</h1>
                 <p>
-                    The seed result is calculated based on a competitor's average over their last X averages. (If avg is DNF, the singles from that average are used instead) You can adjust this number here to modify the seed calculation for each event.
+                    The seed result is calculated based on a competitor's mean over their last X averages, or singles for blind events. (DNF results are not included) You can adjust this number here to modify the seed calculation for each event.
                 </p>
                     <div class="event-settings">
                         {% for event, event_name, event_value in all_events %}
@@ -77,7 +77,10 @@
                                     min="3"
                                     oninput="this.value = Math.round(this.value);"
                                     onblur="if (this.value > 200) this.value = 200; if (this.value < 3) this.value = 3;">
-                                </div>
+                            {% if event in ['333bf', '444bf', '555bf', '333mbf'] %}
+                                <p class="settings-single">(By Single)</p>
+                            {% endif %}
+                            </div>
                         {% endfor %}
                     </div>
                     <button onclick="reset_settings()" class="reset">Reset Values</button>

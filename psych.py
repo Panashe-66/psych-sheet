@@ -13,17 +13,17 @@ EVENT_SETTINGS_DATA = [
     ('555', '5x5', 4),
     ('666', '6x6', 3),
     ('777', '7x7', 3),
-    ('333bf', '3x3 Blindfolded', 4),
-    ('333fm', '3x3 Fewest Moves', 2),
+    ('333bf', '3x3 Blindfolded', 12),
+    ('333fm', '3x3 Fewest Moves', 3),
     ('333oh', '3x3 One-Handed', 4),
     ('clock', 'Clock', 4),
     ('minx', 'Megaminx', 4),
     ('pyram', 'Pyraminx', 6),
     ('skewb', 'Skewb', 6),
     ('sq1', 'Square-1', 4),
-    ('444bf', '4x4 Blindfolded', 2),
-    ('555bf', '5x5 Blindfolded', 2),
-    ('333mbf', '3x3 Multi-Blind', 2)
+    ('444bf', '4x4 Blindfolded', 6),
+    ('555bf', '5x5 Blindfolded', 6),
+    ('333mbf', '3x3 Multi-Blind', 6)
 ]
 
 def sec_to_hms(sec):
@@ -56,7 +56,7 @@ def date_range(start, end):
     else: #Multimonth
         return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
 
-def get_avg(wca_id, event, solves):
+def get_avg(wca_id, event, solves, type):
     url = f'{API}/persons/{wca_id}/results'
     response = requests.get(url)
 
@@ -64,13 +64,12 @@ def get_avg(wca_id, event, solves):
         return None
     
     time_list = [
-        (attempt / 100 if event != '333mbf' and not (event == '333fm' and result.get("average", 0) <= 0) else attempt)
+        (attempt / 100 if event != '333mbf' else attempt)
         for result in response.json()
         if result["event_id"] == event
-        for attempt in (result.get("attempts", []) if result.get("average", 0) <= 0 else [result["average"]])
+        for attempt in (result.get('attempts', []) if type == 'single' else [result.get('average', 0)])
         if attempt > 0
     ][::-1][:solves]
-
 
     if event == '333mbf':
         mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
@@ -85,13 +84,15 @@ def get_avg(wca_id, event, solves):
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
+    type = 'single' if event in ['333bf', '444bf', '555bf', '333mbf'] else 'avg'
+
     def process_competitor(competitor):
         wca_id = competitor.get("wcaId")
         name = competitor.get("name")
         events = (competitor.get("registration") or {}).get("eventIds", [])
 
         if wca_id and events and event in events:
-            avg =  get_avg(wca_id, event, solves)
+            avg =  get_avg(wca_id, event, solves, type)
 
             if avg:
                 return avg, name
@@ -103,7 +104,11 @@ def get_psych_sheet(competitors, event, solves):
         ]
 
     results.sort(reverse=True if event == '333mbf' else False)
-    results = [(sec_to_hms(avg), name) for avg, name in results]
+    
+    if event not in ['333mbf', '333fm']:
+        results = [(sec_to_hms(avg), name) for avg, name in results]
+    else:
+        results = [(f'{avg:.2f}', name) for avg, name in results]
 
     prev_rank, prev_avg = 0, 0
 
