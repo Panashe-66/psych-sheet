@@ -4,6 +4,14 @@
     border-radius: 50%;
     width: 41px;
     cursor: pointer;
+
+    @media (max-width: 1024px) {
+        width: 40px;
+    }
+
+    @media (max-width: 768px) {
+        width: 38px;
+    }
 }
 
 .pfp:hover {
