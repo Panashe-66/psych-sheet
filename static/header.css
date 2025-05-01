@@ -1,6 +1,7 @@
 @import url("base.css");
 
 .pfp {
+    display: block;
     border-radius: 50%;
     width: 41px;
     height: 41px;
