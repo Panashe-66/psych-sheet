@@ -61,11 +61,20 @@ header {
 .logout-button {
     position: absolute;
     top: 65px;
-    right: 35px;
+    right: 20px;
     background-color: var(--bg);
     box-shadow: 0px 4px 6px rgba(242, 242, 242, 0.1);
     padding: 8px 13px;
     border-radius: 7px;
+    font-size: 14.5px;
+
+    @media (max-width: 1024px) {
+        font-size: 14.5px;
+    }
+
+    @media (max-width: 768px) {
+       font-size: 14px;
+    }
 }
 
 .logout-button:hover {
@@ -109,8 +118,7 @@ header {
 }
 
 .breadcrumb-link,
-.login-button,
-.logout-button {
+.login-button {
     font-size: 16px;
 
     @media (max-width: 1024px) {
