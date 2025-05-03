@@ -101,13 +101,15 @@ header {
     margin: 20px;
 
     @media (max-width: 1024px) {
-        border-width: 4.5px;
+        border-width: 4.8px;
+        width: 30.4px;
+        height: 30.4px;
     }
 
     @media (max-width: 768px) {
-        width: 30px;
-        height: 30px;
-        border-width: 4px;
+        width: 29px;
+        height: 29px;
+        border-width: 4.5px;
     }
 }
 
