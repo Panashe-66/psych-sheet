@@ -1,5 +1,4 @@
 import requests
-import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from flag import flag
@@ -81,6 +80,7 @@ def get_avg(wca_id, event, solves, type):
 
     return avg
 
+
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
@@ -118,7 +118,7 @@ def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, per_page=100, page=1, user_id=None, search=None):
+def get_comps(when, per_page=25, page=1, user_id=None, search=None):
     today = datetime.today().strftime('%Y-%m-%d')
     now = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
@@ -170,34 +170,20 @@ def get_comps(when, per_page=100, page=1, user_id=None, search=None):
 
     return comps
 
-def get_event_ids(comp_id):
-    event_ids = []
-
+def get_comp_info(comp_id):
+    data = []
+    
     url = f'{API}/competitions/{comp_id}'
     response = requests.get(url)
 
     if response.status_code != 200:
         return []
     
-    event_ids = response.json().get('event_ids')
+    comp = response.json().get
 
-    return event_ids
-
-def get_comp_name(comp_id, short=False):
-    name = ''
-    
-    url = f'{API}/competitions/{comp_id}'
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return ''
-    
-    if short:
-        name = response.json().get('short_name')
-    else:
-        name = response.json().get('name')
-
-    return name
+    data.extend([comp('name'), comp('short_name'), comp('event_ids')])
+        
+    return data
 
 def get_competitors(comp_id):
     url = f'{API}/competitions/{comp_id}/wcif/public'
@@ -209,11 +195,17 @@ def get_competitors(comp_id):
     competitors = response.json().get("persons", [])
 
     def valid_competitor(competitor):
-        return (
+        if (
             competitor.get("wcaId") and
             competitor.get("registration") and
             competitor["registration"].get("isCompeting")
-        )
+        ):
+            return {
+                "wcaId": competitor["wcaId"],
+                "registration": competitor["registration"]
+            }
+        
+        return None
 
     with ThreadPoolExecutor(max_workers=50) as executor:
         competitors = list(executor.map(lambda c: c if valid_competitor(c) else None, competitors))

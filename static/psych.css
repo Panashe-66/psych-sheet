@@ -255,11 +255,6 @@ input[type="number"]::-webkit-inner-spin-button {
     }
 }
 
-.comp-title {
-    vertical-align: middle;
-    margin-bottom: 40px;
-}
-
 .settings-container {
     background-color: rgba(0, 0, 0, 0.75);
     position: fixed;
@@ -306,8 +301,7 @@ input[type="number"]::-webkit-inner-spin-button {
     filter: invert(100%);
 }
 
-.settings-close,
-.alert-close {
+.settings-close {
     width: 2em;
     height: 2em;
     color: #000;
@@ -325,18 +319,8 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: .25em .25em;
 }
 
-.alert-close {
-    padding: 0;
-}
-
-.settings-close:hover,
-.alert-close:hover {
+.settings-close:hover {
     opacity: 0.75;
-}
-
-.settings-close:active,
-.alert-close:active {
-    opacity: 1;
 }
 
 .settings-header {
@@ -362,6 +346,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .skeleton-psych {
+    display: none;
+
     td:nth-child(1) {
         padding-left: 40px;
         padding-right: 20px;
@@ -395,7 +381,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .show-user {
-    display: block;
+    display: none;
     margin: auto;
     background-color: var(--primary);
     border: none;
@@ -444,12 +430,4 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .search-active {
     margin-bottom: 50px;
-}
-
-.large-comp {
-    padding: 20px;
-    background-color: aqua;
-    margin-bottom: 15px;
-    opacity: 1;
-    transition: opacity 0.6s;
 }

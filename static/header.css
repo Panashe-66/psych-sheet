@@ -1,5 +1,10 @@
 @import url("base.css");
 
+:root {
+    --header-height: 45px;
+    --breadcrumb-size: 16px;
+}
+
 .pfp {
     display: block;
     border-radius: 50%;
@@ -21,13 +26,21 @@
 
 .pfp:hover {
     opacity: 0.8;
-}
+} 
 
 .pfp,
 .login-a {
     margin-left: auto;
     margin-right: 20px;
     height: fit-content;
+
+    @media (max-width: 1024px) {
+        margin: 0 19px;
+    }
+
+    @media (max-width: 768px) {
+        margin: 0 17px;
+    }
 }
 
 .login-button,
@@ -46,6 +59,7 @@ header {
     top: 0;
     display: flex;
     height: 45px;
+    min-height: fit-content;
     width: 100%;
     background-color: var(--bg);
     box-shadow: 0 5px 5px rgba(100, 100, 100, 0.1);
@@ -56,10 +70,17 @@ header {
 
     @media (max-width: 1024px) {
         height: 42px;
+        padding: 8.5px 0;
     }
 
     @media (max-width: 768px) {
         height: 37px;
+        padding: 8px 0;
+    }
+
+    @media (max-width: 450px) {
+        height: 34px;
+        padding: 8px 0;
     }
 }
 
@@ -126,6 +147,16 @@ header {
 .breadcrumbs {
     margin: 0 20px;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+
+    @media (max-width: 1024px) {
+        margin: 0 19px;
+    }
+
+    @media (max-width: 768px) {
+        margin: 0 17px;
+    }
 }
 
 .breadcrumb {
@@ -133,29 +164,49 @@ header {
 }
 
 .breadcrumb-link {
-    color: rgb(0, 140, 255);
+    color: var(--primary);
     font-weight: bold;
+    justify-content: center;
 }
 
 .breadcrumb-link,
-.login-button {
+.login-button,
+.slash {
     font-size: 16px;
+    --breadcrumb-size: 16px;
 
     @media (max-width: 1024px) {
         font-size: 15.5px;
+        --breadcrumb-size: 15.5px;
     }
 
     @media (max-width: 768px) {
         font-size: 14.5px;
+        --breadcrumb-size: 14.5px;
+    }
+
+    @media (max-width: 450px) {
+        font-size: 13px;
+        --breadcrumb-size: 13px;
     }
 }
 
 .breadcrumb-last {
-    color: rgb(141, 52, 231);
+    color: var(--secondary);
     cursor: pointer;
 }
 
-.breadcrumb:not(:last-of-type)::after {
-    content: '/';
-    margin: 0 5px;
+.slash {
+    margin: 0 4px;
+}
+
+.logout,
+.spinner {
+    display: none;
+}
+
+.home {
+    height: var(--breadcrumb-size);
+    position: relative;
+    top: 2px;
 }

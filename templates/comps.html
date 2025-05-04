@@ -6,7 +6,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Psych Sheet</title>
         <link rel="stylesheet" href="../static/psych.css">
     </head>
@@ -15,6 +14,8 @@
     {% extends "base.html" %}
 
     {% block content %}
+
+    <h1 class="title">Psych Sheet</h1>
         
     <input type="text" placeholder="Search Competitions" class="search">
 
@@ -79,7 +80,18 @@
             get_more_comps(page);
 
             function get_more_comps(page) {
-                $.get(`/more_comps?page=${page}`, (comps) => {
+                fetch('/psych_sheet/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'page': page,
+                        'type': 'm'
+                    })
+                })
+                .then(res => res.json())
+                .then(comps => {
                     if (comps.length === 0) {
                         document.querySelector('.loading-container').style.display = 'none';
                         document.querySelector('.no-more-comps').style.display = 'block';
@@ -100,14 +112,15 @@
                                 </div>
                             </a>
                         `;
-
+            
                         $('#upcoming-comps').append(comps_html);
                     }
-            
-                    page += 1
+                    
+                    page += 1;
                     get_more_comps(page);
                 });
             }
+            
 
             function search(page) {
                 if (search_done_loading) return;
@@ -149,7 +162,8 @@
                     },
                     body: new URLSearchParams({
                         'search': query,
-                        'page': page
+                        'page': page,
+                        'type': 's'
                     })
                 })
                 .then(res => res.json())           
@@ -174,7 +188,7 @@
 
                         resultsDiv.querySelector('.comp-container').innerHTML += comps_html;
                         document.querySelector('.search-results').style.display = 'block';
-                        document.querySelector('.loading-container-s').display = 'block';
+                        document.querySelector('.loading-container-s').style.display = 'block';
 
                         search_done_loading = false;
                         page += 1

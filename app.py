@@ -1,11 +1,12 @@
 from flask import Flask, request, render_template, session, redirect, url_for, jsonify
-from psych import get_psych_sheet, get_comps, get_event_ids, get_comp_name, get_competitors, EVENT_SETTINGS_DATA
-from auth import get_token, get_user_info
+from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, EVENT_SETTINGS_DATA
+from oauth import get_token, get_user_info
+from cache import cache
 
 app = Flask(__name__)
 app.secret_key = 'pspsych'
 
-comps_per_load = 25
+#--Oauth--
 
 @app.route('/auth')
 def auth():
@@ -24,7 +25,6 @@ def auth():
 
         return redirect(url or url_for('home'))
 
-
 @app.route('/deauth')
 def deauth():
     url = request.args.get('url', url_for('home'))
@@ -37,16 +37,25 @@ def deauth():
 
     return redirect(url or url_for('home'))
 
+#--Home-
 
 @app.route('/')
 def home():
-    return redirect(url_for('comps'))
+    return 'home'
+
+#--Psych Sheet-
 
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
     if request.method == "POST":
-        searched_comps = get_comps('search', comps_per_load, request.form['page'], search=request.form['search'])
-        return jsonify(searched_comps)
+        if request.form['type'] == 's':
+            searched_comps = get_comps('search', 25, request.form['page'], search=request.form['search'])
+            return jsonify(searched_comps)
+        else:
+            page = int(request.form.get("page", 2))
+            upcoming_comps = get_comps('upcoming', 25, page)
+
+            return jsonify(upcoming_comps)
     
     logged_in = session.get('logged_in', False)
 
@@ -55,41 +64,63 @@ def comps():
     else:
         your_comps = None
 
-    ongoing_comps = get_comps('ongoing')
-    upcoming_comps = get_comps('upcoming', comps_per_load, 1)
+    ongoing_comps = cache('ongoing_comps',
+                          lambda: get_comps('ongoing'),
+                          600
+                        )
 
-    breadcrumbs = zip(['Home', 'Psych Sheet'], [url_for('home'), ''])
-    
-    return render_template('comps.html', comps={'your': your_comps, 'ongoing': ongoing_comps, 'upcoming': upcoming_comps}, breadcrumbs=breadcrumbs)
+    upcoming_comps = cache('upcoming_comps',
+                        lambda: get_comps('upcoming', 25, 1),
+                        600
+                    )
 
+    breadcrumbs = zip(
+        ['Home', 'Psych Sheet'],
+        [url_for('home'), '']
+    )
 
-@app.route("/more_comps", methods=["GET"])
-def more_comps():
-    page = int(request.args.get("page", 2))
-    upcoming_comps = get_comps('upcoming', comps_per_load, page)
-
-    return jsonify(upcoming_comps)
+    return render_template('comps.html',
+                            comps={'your': your_comps, 'ongoing': ongoing_comps, 'upcoming': upcoming_comps}, breadcrumbs=breadcrumbs
+                        )
 
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
 def psych_sheet(comp):
-    competitors = get_competitors(comp)
-    name = get_comp_name(comp)
-    events = get_event_ids(comp)
-
     if request.method == "POST":
+        competitors = cache(f'{comp} competitors',
+                            lambda: get_competitors(comp),
+                            600
+                        )
+
         solves = int(request.form["solves"])
         event = request.form.get('event')
 
-        if event in events:
-            psych_sheet = get_psych_sheet(competitors, event, solves)
+        psych_sheet = get_psych_sheet(competitors, event, solves)
 
-            return jsonify(psych_sheet)
+        return jsonify(psych_sheet)
+
+    competitors = cache(f'{comp} competitors',
+                        lambda: get_competitors(comp),
+                        600
+                    )
+
+    name, short_name, events = get_comp_info(comp)
 
     psych_sheet = session.get('psych_sheet', None)
 
-    breadcrumbs = zip(['Home', 'Psych Sheet', get_comp_name(comp, short=True)], [url_for('home'), url_for('comps'), ''])
+    breadcrumbs = zip(
+        ['Home', 'Psych Sheet', short_name],
+        [url_for('home'), url_for('comps'), '']
+    )
 
-    return render_template('psych.html', psych_sheet=psych_sheet, events=events, all_events=EVENT_SETTINGS_DATA, comp_id=comp, comp_name=name, competitors=range(len(competitors)), breadcrumbs=breadcrumbs )
+    return render_template('psych.html',
+                            psych_sheet=psych_sheet,
+                            events=events,
+                            all_events=EVENT_SETTINGS_DATA,
+                            comp_id=comp, comp_name=name,
+                            competitors=range(len(competitors)),
+                            breadcrumbs=breadcrumbs,
+                            short_name=short_name
+                        )
 
 
 if __name__ == "__main__":

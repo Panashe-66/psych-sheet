@@ -5,15 +5,14 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Psych Sheet</title>
+        <title>{{ short_name }}</title>
         <link rel="stylesheet" href="../static/psych.css">
     </head>        
     <body>
         {% extends "base.html" %}
 
         {% block content %}
-        <h1 class="comp-title">{{ comp_name }}</h1>
+        <h1 class="title">{{ comp_name }}</h1>
 
         <button id="settings-button" class="settings-button">
             <img src="../static/Icons/calculator.svg" class="settings-icon">
@@ -58,7 +57,7 @@
     
         <div class="settings-container" id="settings-container">
             <div class="settings">
-                <button type="button" class="settings-close" aria-label="Close" id="settings-close"></button>
+                <button type="button" class="settings-close" id="settings-close"></button>
                 <h1 class="settings-header">Adjust Seed Calculation</h1>
                 <p>
                     The seed result is calculated based on a competitor's mean over their last X averages, or singles for blind events. (DNF results are not included) You can adjust this number here to modify the seed calculation for each event.
@@ -153,7 +152,7 @@
                             const name = {{ session.get("name") | tojson }};
                             const no_space = psych_div.innerText.replace(/\s+/g, ' ').trim();
 
-                            if (no_space.includes(name.trim())) {
+                            if (name && no_space.includes(name.trim())) {
                                 document.querySelector('.show-user').style.display = 'block';
                             } else {
                                 document.querySelector('.show-user').style.display = 'none';
@@ -256,6 +255,16 @@
                     input.value = input.getAttribute('value');
                     save_event_value(event, input.value);
                 });
+            }
+
+            var close = document.getElementsByClassName("alert-close");
+
+            close.onclick = function(){
+                var div = this.parentElement;
+
+                div.style.opacity = "0";
+
+                setTimeout(function(){ div.style.display = "none"; }, 600);
             }
         </script>
 

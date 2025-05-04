@@ -1,6 +1,9 @@
+@import url("header.css");
+
 :root {
     --bg: #0d1215;
     --primary: rgb(0, 140, 255);
+    --secondary: rgb(0, 180, 180);
 }
 
 html, body {
@@ -8,7 +11,7 @@ html, body {
 }
 
 body {
-    margin-top: 100px;
+    margin-top: calc(var(--header-height) + 30px);
     margin-bottom: 50px;
     background-color: var(--bg);
     color: white;
@@ -58,4 +61,9 @@ input {
     color: white;
     background-color: #121212;
     margin: 0;
+}
+
+.title {
+    vertical-align: middle;
+    margin-bottom: 40px;
 }

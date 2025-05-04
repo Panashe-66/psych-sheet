@@ -3,14 +3,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <header>
+    <header class="header">
         <ul class="breadcrumbs">
             {% for breadcrumb, url in breadcrumbs %}
                 <li class="breadcrumb">
-                    {% if loop.last %}
+                    {% if loop.first and loop.last %}
+                        <a href="{{ url }}" class="breadcrumb-link">
+                            <img src="../static/Icons/home-teal.svg" class="home">
+                        </a>
+                    {% elif loop.last %}
                         <span class="breadcrumb-link breadcrumb-last">{{ breadcrumb }}</span>
+                    {% elif loop.first %}
+                        <a href="{{ url }}" class="breadcrumb-link">
+                            <img src="../static/Icons/home.svg" class="home">
+                        </a>
+
+                        <span class="slash">/</span>
                     {% else %}
                         <a href="{{ url }}" class="breadcrumb-link">{{ breadcrumb }}</a>
+
+                        <span class="slash">/</span>
                     {% endif %}
                 </li>
             {% endfor %}
@@ -35,9 +47,6 @@
     {% block content %}{% endblock %}
 
     <script>
-        document.querySelector('.logout').style.display = 'none';
-        document.querySelector('.spinner').style.display = 'none';
-
         function toggle_logout() {
             const logout = document.querySelector('.logout');
             
@@ -58,9 +67,18 @@
             const logout = document.querySelector('.logout');
             const pfp = document.querySelector('.pfp');
             
-            if (!pfp.contains(event.target) && !logout.contains(event.target)) {
+            if (pfp && !pfp.contains(event.target) && !logout.contains(event.target)) {
                 logout.style.display = 'none';
             }
         });
+
+        function update_header_height() {
+            const header = document.querySelector('.header');
+            const header_height = header.offsetHeight;
+            document.documentElement.style.setProperty('--header-height', `${header_height}px`);
+        }
+
+        window.addEventListener('resize', update_header_height);
+        window.addEventListener('load', update_header_height);
     </script>
 </body>
