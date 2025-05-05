@@ -159,6 +159,9 @@
                             }
                         }
                     }
+                })
+                .catch(error => {
+                    psych_sheet(currentEvent)
                 });
                 
                 event_buttons.forEach(button => {

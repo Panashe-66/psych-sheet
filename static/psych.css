@@ -51,15 +51,11 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-direction: column;
     gap: 11px;
     justify-content: flex-start;
-    width: fit-content;
+    width: 750px;
     margin: 0 auto;
     line-height: 1.3;
     margin-bottom: 50px;
-    padding: 0 30px;
-
-    /* @media (max-width: 768px) {
-        width: auto;
-    } */
+    max-width: 90%;
 }
 
 .comp-button {
@@ -72,16 +68,22 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: left;
     border-radius: 17px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
     text-decoration: none;
-    width: 700px;
+    width: 100%;
     box-sizing: border-box;
     height: auto;
     gap: 20px;
+    margin: 0 auto;
 
-    /* @media (max-width: 768px) {
-        width: 100%;
-    } */
+    @media (max-width: 768px) {
+        padding: 7px 15px;
+        gap: 15px;
+    }
+
+    @media (max-width: 425px) {
+        padding: 7px 12px;
+        gap: 12px;
+    }
 }
 
 .comp-button:hover {
@@ -92,8 +94,9 @@ input[type="number"]::-webkit-inner-spin-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 50px;
     float: left;
+    font-size: 2.4375rem;
+    font-size: clamp(2.4375rem, 2.2410714285714284rem + 0.9821428571428571vw, 3.125rem);
 }
 
 .comp-button-text {
@@ -105,30 +108,31 @@ input[type="number"]::-webkit-inner-spin-button {
 .comp-name {
     font-weight: bold;
     line-height: none;
-    font-size: 17px;
     margin-top: 0;
     margin-bottom: 0;
+    font-size: 0.828125rem;
+    font-size: clamp(0.828125rem, 0.7611607142857143rem + 0.33482142857142855vw, 1.0625rem);
 }
 
 .comp-details {
     margin-top: 5px;
     margin-bottom: 0;
     line-height: none;
-    font-size: 15px;
     color: rgb(207, 207, 207);
+    font-size: 0.73125rem;
+    font-size: clamp(0.73125rem, 0.6723214285714285rem + 0.2946428571428572vw, 0.9375rem);
 }
 
 .loading-container,
 .loading-container-s {
     width: 750px;
-    max-width: 100%;
+    max-width: 80%;
     height: 7px;
     background-color: #343434;
     border-radius: 5px;
     overflow: hidden;
     position: relative;
     margin: 0 auto;
-    margin-bottom: 50px;
     display: block;
 }
 
@@ -418,16 +422,32 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .search {
     width: 550px;
-    height: 45px;
+    height: 42px;
     border-radius: 300px;
     padding-left: 14px;
     margin: 0 25px 15px 25px;
+    font-size: 13px;
+    max-width: 80%;
 
     @media (max-width: 768px) {
-        width: 80%;
+        height: 38px;
+        font-size: 12px;
+    }
+
+    @media (max-width: 1024px) {
+        height: 40px;
     }
 }
 
 .search-active {
     margin-bottom: 50px;
+}
+
+.no-more-comps {
+    margin-bottom: 0;
+}
+
+.comps-list {
+    margin: 0 auto;
+    width: 100%;
 }

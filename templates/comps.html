@@ -118,6 +118,9 @@
                     
                     page += 1;
                     get_more_comps(page);
+                })
+                .catch(error => {
+                    get_more_comps(page)
                 });
             }
             
@@ -207,6 +210,9 @@
                         search_done_loading = true;
                         document.querySelector('.loading-container-s').style.display = 'none';
                     }
+                })
+                .catch(error => {
+                    search(page)
                 });
             }
 

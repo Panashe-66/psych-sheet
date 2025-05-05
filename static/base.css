@@ -67,3 +67,17 @@ input {
     vertical-align: middle;
     margin-bottom: 40px;
 }
+
+h1 {
+    font-size: 1.6875rem;
+    font-size: clamp(1.6875rem, 1.5982142857142858rem + 0.4464285714285714vw, 2rem);
+    margin: 20px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.3125rem;
+    font-size: clamp(1.3125rem, 1.2589285714285714rem + 0.26785714285714285vw, 1.5rem);
+    margin: 20px 18px;
+    text-align: center;
+}
