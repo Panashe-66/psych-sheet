@@ -1,7 +1,6 @@
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
-from flag import flag
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -25,66 +24,36 @@ EVENT_SETTINGS_DATA = [
     ('333mbf', '3x3 Multi-Blind', 6)
 ]
 
-def sec_to_hms(sec):
-    hours, sec = divmod(sec, 3600)
-    min, sec = divmod(sec, 60)
-    sec = round(sec, 2)
-
-    if hours:
-        return f"{int(hours)}:{int(min):02}:{sec:05.2f}"
-    elif min:
-        return f"{int(min)}:{sec:05.2f}"
-    else:
-        return f"{sec:.2f}" if sec < 10 else f"{sec:05.2f}"
-
-def date_range(start, end):
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-    start_year, start_month, start_date = start[:4], months[int(start[5:7])-1], start[8:10].lstrip('0')
-    end_year, end_month, end_date = end[:4], months[int(end[5:7])-1], end[8:10].lstrip('0')
-
-    if start == end: #One Day
-        return f'{start_month} {start_date}, {start_year}'
-    
-    elif start_year != end_year: #Multiyear
-        return f'{start_month} {start_date}, {start_year} - {end_month} {end_date}, {end_year}'
-    
-    elif start_month == end_month: #Multiday
-        return f'{start_month} {start_date} - {end_date}, {start_year}'
-    
-    else: #Multimonth
-        return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
-
-def get_avg(wca_id, event, solves, type):
-    url = f'{API}/persons/{wca_id}/results'
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return None
-    
-    time_list = [
-        (attempt / 100 if event != '333mbf' else attempt)
-        for result in response.json()
-        if result["event_id"] == event
-        for attempt in (result.get('attempts', []) if type == 'single' else [result.get('average', 0)])
-        if attempt > 0
-    ][::-1][:solves]
-
-    if event == '333mbf':
-        mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
-        time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
-    
-    time_list.sort()
-
-    avg = round(sum(time_list) / len(time_list), 2) if time_list else None
-
-    return avg
-
 
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
 
     type = 'single' if event in ['333bf', '444bf', '555bf', '333mbf'] else 'avg'
+
+    def get_avg(wca_id, event, solves, type):
+        url = f'{API}/persons/{wca_id}/results'
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            return None
+        
+        time_list = [
+            (attempt / 100 if event != '333mbf' else attempt)
+            for result in response.json()
+            if result["event_id"] == event
+            for attempt in (result.get('attempts', []) if type == 'single' else [result.get('average', 0)])
+            if attempt > 0
+        ][::-1][:solves]
+
+        if event == '333mbf':
+            mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
+            time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
+        
+        time_list.sort()
+
+        avg = round(sum(time_list) / len(time_list), 2) if time_list else None
+
+        return avg
 
     def process_competitor(competitor):
         wca_id = competitor.get("wcaId")
@@ -106,6 +75,18 @@ def get_psych_sheet(competitors, event, solves):
     results.sort(reverse=True if event == '333mbf' else False)
     
     if event not in ['333mbf', '333fm']:
+
+        def sec_to_hms(sec):
+            hours, sec = divmod(sec, 3600)
+            min, sec = divmod(sec, 60)
+            sec = round(sec, 2)
+
+            return (
+                f"{int(hours)}:{int(min):02}:{sec:05.2f}" if hours else #HH:MM:SS.ss
+                f"{int(min)}:{sec:05.2f}" if min else #MM:SS.ss
+                f"{sec:.2f}" if sec < 10 else f"{sec:05.2f}" #SS.ss
+            )
+        
         results = [(sec_to_hms(avg), name) for avg, name in results]
     else:
         results = [(f'{avg:.2f}', name) for avg, name in results]
@@ -119,13 +100,66 @@ def get_psych_sheet(competitors, event, solves):
     return psych_sheet
 
 def get_comps(when, per_page=25, page=1, user_id=None, search=None):
-    today = datetime.today().strftime('%Y-%m-%d')
-    now = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    FLAG_MAP = {
+        'AW': '🇦🇼', 'AF': '🇦🇫', 'AO': '🇦🇴', 'AI': '🇦🇮', 'AX': '🇦🇽',
+        'AL': '🇦🇱', 'AD': '🇦🇩', 'AE': '🇦🇪', 'AR': '🇦🇷', 'AM': '🇦🇲',
+        'AS': '🇦🇸', 'AQ': '🇦🇶', 'TF': '🇹🇫', 'AG': '🇦🇬', 'AU': '🇦🇺',
+        'AT': '🇦🇹', 'AZ': '🇦🇿', 'BI': '🇧🇮', 'BE': '🇧🇪', 'BJ': '🇧🇯',
+        'BQ': '🇧🇶', 'BF': '🇧🇫', 'BD': '🇧🇩', 'BG': '🇧🇬', 'BH': '🇧🇭',
+        'BS': '🇧🇸', 'BA': '🇧🇦', 'BL': '🇧🇱', 'BY': '🇧🇾', 'BZ': '🇧🇿',
+        'BM': '🇧🇲', 'BO': '🇧🇴', 'BR': '🇧🇷', 'BB': '🇧🇧', 'BN': '🇧🇳',
+        'BT': '🇧🇹', 'BV': '🇧🇻', 'BW': '🇧🇼', 'CF': '🇨🇫', 'CA': '🇨🇦',
+        'CC': '🇨🇨', 'CH': '🇨🇭', 'CL': '🇨🇱', 'CN': '🇨🇳', 'CI': '🇨🇮',
+        'CM': '🇨🇲', 'CD': '🇨🇩', 'CG': '🇨🇬', 'CK': '🇨🇰', 'CO': '🇨🇴',
+        'KM': '🇰🇲', 'CV': '🇨🇻', 'CR': '🇨🇷', 'CU': '🇨🇺', 'CW': '🇨🇼',
+        'CX': '🇨🇽', 'KY': '🇰🇾', 'CY': '🇨🇾', 'CZ': '🇨🇿', 'DE': '🇩🇪',
+        'DJ': '🇩🇯', 'DM': '🇩🇲', 'DK': '🇩🇰', 'DO': '🇩🇴', 'DZ': '🇩🇿',
+        'EC': '🇪🇨', 'EG': '🇪🇬', 'ER': '🇪🇷', 'EH': '🇪🇭', 'ES': '🇪🇸',
+        'EE': '🇪🇪', 'ET': '🇪🇹', 'FI': '🇫🇮', 'FJ': '🇫🇯', 'FK': '🇫🇰',
+        'FR': '🇫🇷', 'FO': '🇫🇴', 'FM': '🇫🇲', 'GA': '🇬🇦', 'GB': '🇬🇧',
+        'GE': '🇬🇪', 'GG': '🇬🇬', 'GH': '🇬🇭', 'GI': '🇬🇮', 'GN': '🇬🇳',
+        'GP': '🇬🇵', 'GM': '🇬🇲', 'GW': '🇬🇼', 'GQ': '🇬🇶', 'GR': '🇬🇷',
+        'GD': '🇬🇩', 'GL': '🇬🇱', 'GT': '🇬🇹', 'GF': '🇬🇫', 'GU': '🇬🇺',
+        'GY': '🇬🇾', 'HK': '🇭🇰', 'HM': '🇭🇲', 'HN': '🇭🇳', 'HR': '🇭🇷',
+        'HT': '🇭🇹', 'HU': '🇭🇺', 'ID': '🇮🇩', 'IM': '🇮🇲', 'IN': '🇮🇳',
+        'IO': '🇮🇴', 'IE': '🇮🇪', 'IR': '🇮🇷', 'IQ': '🇮🇶', 'IS': '🇮🇸',
+        'IL': '🇮🇱', 'IT': '🇮🇹', 'JM': '🇯🇲', 'JE': '🇯🇪', 'JO': '🇯🇴',
+        'JP': '🇯🇵', 'KZ': '🇰🇿', 'KE': '🇰🇪', 'KG': '🇰🇬', 'KH': '🇰🇭',
+        'KI': '🇰🇮', 'KN': '🇰🇳', 'KR': '🇰🇷', 'KW': '🇰🇼', 'LA': '🇱🇦',
+        'LB': '🇱🇧', 'LR': '🇱🇷', 'LY': '🇱🇾', 'LC': '🇱🇨', 'LI': '🇱🇮',
+        'LK': '🇱🇰', 'LS': '🇱🇸', 'LT': '🇱🇹', 'LU': '🇱🇺', 'LV': '🇱🇻',
+        'MO': '🇲🇴', 'MF': '🇲🇫', 'MA': '🇲🇦', 'MC': '🇲🇨', 'MD': '🇲🇩',
+        'MG': '🇲🇬', 'MV': '🇲🇻', 'MX': '🇲🇽', 'MH': '🇲🇭', 'MK': '🇲🇰',
+        'ML': '🇲🇱', 'MT': '🇲🇹', 'MM': '🇲🇲', 'ME': '🇲🇪', 'MN': '🇲🇳',
+        'MP': '🇲🇵', 'MZ': '🇲🇿', 'MR': '🇲🇷', 'MS': '🇲🇸', 'MQ': '🇲🇶',
+        'MU': '🇲🇺', 'MW': '🇲🇼', 'MY': '🇲🇾', 'YT': '🇾🇹', 'NA': '🇳🇦',
+        'NC': '🇳🇨', 'NE': '🇳🇪', 'NF': '🇳🇫', 'NG': '🇳🇬', 'NI': '🇳🇮',
+        'NU': '🇳🇺', 'NL': '🇳🇱', 'NO': '🇳🇴', 'NP': '🇳🇵', 'NR': '🇳🇷',
+        'NZ': '🇳🇿', 'OM': '🇴🇲', 'PK': '🇵🇰', 'PA': '🇵🇦', 'PN': '🇵🇳',
+        'PE': '🇵🇪', 'PH': '🇵🇭', 'PW': '🇵🇼', 'PG': '🇵🇬', 'PL': '🇵🇱',
+        'PR': '🇵🇷', 'KP': '🇰🇵', 'PT': '🇵🇹', 'PY': '🇵🇾', 'PS': '🇵🇸',
+        'PF': '🇵🇫', 'QA': '🇶🇦', 'RE': '🇷🇪', 'RO': '🇷🇴', 'RU': '🇷🇺',
+        'RW': '🇷🇼', 'SA': '🇸🇦', 'SD': '🇸🇩', 'SN': '🇸🇳', 'SG': '🇸🇬',
+        'GS': '🇬🇸', 'SH': '🇸🇭', 'SJ': '🇸🇯', 'SB': '🇸🇧', 'SL': '🇸🇱',
+        'SV': '🇸🇻', 'SM': '🇸🇲', 'SO': '🇸🇴', 'PM': '🇵🇲', 'RS': '🇷🇸',
+        'SS': '🇸🇸', 'ST': '🇸🇹', 'SR': '🇸🇷', 'SK': '🇸🇰', 'SI': '🇸🇮',
+        'SE': '🇸🇪', 'SZ': '🇸🇿', 'SX': '🇸🇽', 'SC': '🇸🇨', 'SY': '🇸🇾',
+        'TC': '🇹🇨', 'TD': '🇹🇩', 'TG': '🇹🇬', 'TH': '🇹🇭', 'TJ': '🇹🇯',
+        'TK': '🇹🇰', 'TM': '🇹🇲', 'TL': '🇹🇱', 'TO': '🇹🇴', 'TT': '🇹🇹',
+        'TN': '🇹🇳', 'TR': '🇹🇷', 'TV': '🇹🇻', 'TW': '🇹🇼', 'TZ': '🇹🇿',
+        'UG': '🇺🇬', 'UA': '🇺🇦', 'UM': '🇺🇲', 'UY': '🇺🇾', 'US': '🇺🇸',
+        'UZ': '🇺🇿', 'VA': '🇻🇦', 'VC': '🇻🇨', 'VE': '🇻🇪', 'VG': '🇻🇬',
+        'VI': '🇻🇮', 'VN': '🇻🇳', 'VU': '🇻🇺', 'WF': '🇼🇫', 'WS': '🇼🇸',
+        'YE': '🇾🇪', 'ZA': '🇿🇦', 'ZM': '🇿🇲', 'ZW': '🇿🇼'
+    }
+
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
     comps = []
     
     if when == 'ongoing':
-        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&include_cancelled=false"
+        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page=100&page={page}&include_cancelled=false"
     elif when == 'upcoming':
         tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
@@ -153,7 +187,26 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
     elif when == 'ongoing':
         comps = [comp for comp in comps if comp["end_date"] >= now and comp["start_date"] <= now]
     elif when =='upcoming' or when == 'search':
-        comps = [comp for comp in comps if "registration_open" in comp and comp["registration_open"] <= now]
+        comps = [comp for comp in comps if comp["registration_open"] <= now]
+    
+
+    def date_range(start, end):
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        start_year, start_month, start_date = start[:4], months[int(start[5:7])-1], start[8:10].lstrip('0')
+        end_year, end_month, end_date = end[:4], months[int(end[5:7])-1], end[8:10].lstrip('0')
+
+        if start == end: #One Day
+            return f'{start_month} {start_date}, {start_year}'
+        
+        elif start_year != end_year: #Multiyear
+            return f'{start_month} {start_date}, {start_year} - {end_month} {end_date}, {end_year}'
+        
+        elif start_month == end_month: #Multiday
+            return f'{start_month} {start_date} - {end_date}, {start_year}'
+        
+        else: #Multimonth
+            return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
 
 
     def extract_attributes(comp):
@@ -162,11 +215,14 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
             "id": comp.get('id', ''),
             "city": comp.get('city', ''),
             "date": date_range(comp.get('start_date', ''), comp.get('end_date', '')),
-            "flag": '🌐' if comp.get('country_iso2', '').startswith('X') else flag(comp.get('country_iso2', ''))
+            "flag": '🌐' if comp.get('country_iso2', '').startswith('X') else FLAG_MAP(comp.get('country_iso2', ''))
         }
 
     with ThreadPoolExecutor(max_workers=50) as executor:
         comps = list(executor.map(extract_attributes, comps))
+
+    if when == 'ongoing' and len(comps) == 100:
+        comps.extend(get_comps('ongoing', 100, page+1))
 
     return comps
 
