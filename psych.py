@@ -215,7 +215,7 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
             "id": comp.get('id', ''),
             "city": comp.get('city', ''),
             "date": date_range(comp.get('start_date', ''), comp.get('end_date', '')),
-            "flag": '🌐' if comp.get('country_iso2', '').startswith('X') else FLAG_MAP(comp.get('country_iso2', ''))
+            "flag": '🌐' if comp.get('country_iso2', '').startswith('X') else FLAG_MAP.get(comp.get('country_iso2', ''))
         }
 
     with ThreadPoolExecutor(max_workers=50) as executor:
