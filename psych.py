@@ -72,7 +72,7 @@ def get_psych_sheet(competitors, event, solves):
             result for result in executor.map(process_competitor, competitors) if result
         ]
 
-    results.sort(reverse=True if event == '333mbf' else False)
+    results.sort(reverse=(event == '333mbf'))
     
     if event not in ['333mbf', '333fm']:
 
@@ -161,7 +161,7 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
     if when == 'ongoing':
         url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page=100&page={page}&include_cancelled=false"
     elif when == 'upcoming':
-        tomorrow = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
+        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
 
         url = f"{API}/competitions?start={tomorrow}&sort=start_date,end_date,name&per_page={per_page}&page={page}&include_cancelled=false"
     elif when == 'user':
@@ -185,7 +185,7 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
 
         comps = ongoing_comps + upcoming_comps
     elif when == 'ongoing':
-        comps = [comp for comp in comps if comp["end_date"] >= now and comp["start_date"] <= now]
+        comps = [comp for comp in comps if comp["end_date"] >= today and comp["start_date"] <= today]
     elif when =='upcoming' or when == 'search':
         comps = [comp for comp in comps if comp["registration_open"] <= now]
     
@@ -208,6 +208,10 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
         else: #Multimonth
             return f'{start_month} {start_date} - {end_month} {end_date}, {start_year}'
 
+    def get_flag(iso2):
+        if iso2.startswith('X'):
+            return '🌐'
+        return FLAG_MAP.get(iso2, '')
 
     def extract_attributes(comp):
         return {
@@ -215,7 +219,7 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
             "id": comp.get('id', ''),
             "city": comp.get('city', ''),
             "date": date_range(comp.get('start_date', ''), comp.get('end_date', '')),
-            "flag": '🌐' if comp.get('country_iso2', '').startswith('X') else FLAG_MAP.get(comp.get('country_iso2', ''))
+            "flag": get_flag(comp.get('country_iso2', ''))
         }
 
     with ThreadPoolExecutor(max_workers=50) as executor:
