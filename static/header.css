@@ -2,7 +2,6 @@
 
 :root {
     --header-height: 45px;
-    --breadcrumb-size: 16px;
 }
 
 .pfp {
@@ -172,23 +171,7 @@ header {
 .breadcrumb-link,
 .login-button,
 .slash {
-    font-size: 16px;
-    --breadcrumb-size: 16px;
-
-    @media (max-width: 1024px) {
-        font-size: 15.5px;
-        --breadcrumb-size: 15.5px;
-    }
-
-    @media (max-width: 768px) {
-        font-size: 14.5px;
-        --breadcrumb-size: 14.5px;
-    }
-
-    @media (max-width: 450px) {
-        font-size: 13px;
-        --breadcrumb-size: 13px;
-    }
+    font-size: clamp(0.8125rem, 0.735969387755102rem + 0.27210884353741494vw, 1.0625rem);
 }
 
 .breadcrumb-last {
@@ -206,7 +189,7 @@ header {
 }
 
 .home {
-    height: var(--breadcrumb-size);
+    height: clamp(0.8125rem, 0.735969387755102rem + 0.27210884353741494vw, 1.0625rem);
     position: relative;
     top: 2px;
 }

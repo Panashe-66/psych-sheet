@@ -6,8 +6,10 @@
     --secondary: rgb(0, 180, 180);
 }
 
+
+/* REMOVE */
 html, body {
-    overflow-x: hidden;
+    overflow-x: hidden; 
 }
 
 body {
@@ -21,7 +23,12 @@ body {
     align-items: center;
     justify-content: center;
     margin-left: 0;
+    margin-right: 0;
     max-width: 100%;
+
+    @media (max-width: 425px) {
+        margin-top: calc(var(--header-height) + 25px);
+    }
 }
 
 button {
@@ -64,20 +71,23 @@ input {
 }
 
 .title {
+    margin-top: 0;
     vertical-align: middle;
     margin-bottom: 40px;
+
+    @media (max-width: 768px) {
+        margin-bottom: 30px;
+    }
 }
 
 h1 {
-    font-size: 1.6875rem;
-    font-size: clamp(1.6875rem, 1.5982142857142858rem + 0.4464285714285714vw, 2rem);
+    font-size: clamp(1.6875rem, 1.5875rem + 0.5vw, 2.1875rem);
     margin: 20px;
     text-align: center;
 }
 
 h2 {
-    font-size: 1.3125rem;
-    font-size: clamp(1.3125rem, 1.2589285714285714rem + 0.26785714285714285vw, 1.5rem);
+    font-size: clamp(1.3125rem, 1.2375rem + 0.375vw, 1.6875rem);
     margin: 20px 18px;
     text-align: center;
 }

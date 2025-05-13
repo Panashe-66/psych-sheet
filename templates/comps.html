@@ -17,7 +17,7 @@
 
     <h1 class="title">Psych Sheet</h1>
         
-    <input type="text" placeholder="Search Competitions" class="search">
+    <input type="text" placeholder="Search Competitions" class="search" autocomplete="off">
 
     <div class="search-results">
         <div class="comp-container"></div>
@@ -104,7 +104,7 @@
                         var comps_html = `
                             <a href="/psych_sheet/${comp.id}">
                                 <div class="comp-button">
-                                    <div class="flag">${comp.flag}</div>
+                                    <div class="flag">${ comp.flag }</div>
                                     <div class="comp-button-text">
                                         <p class="comp-name">${comp.name}</p>
                                         <p class="comp-details">${comp.date} - ${comp.city}</p>
@@ -179,7 +179,7 @@
                         const comps_html = data.map(comp => `
                             <a href="/psych_sheet/${comp.id}">
                                 <div class="comp-button">
-                                    <div class="flag">${comp.flag}</div>
+                                    <div class="flag">${ comp.flag }</div>
                                     <div class="comp-button-text">
                                         <p class="comp-name">${comp.name}</p>
                                         <p class="comp-details">${comp.date} - ${comp.city}</p>
