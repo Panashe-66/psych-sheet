@@ -20,6 +20,7 @@ input[type="number"]::-webkit-inner-spin-button {
 .event-icon {
     filter: invert(75%);
     width: clamp(1.875rem, 1.75rem + 0.625vw, 2.5rem);
+    pointer-events: none;
 }
 
 .event-button {
@@ -95,12 +96,13 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .flag {
-    font-family: 'Apple Color Emoji', 'Noto Color Emoji', 'EmojiOne Color', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
     float: left;
     font-size: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem);
+    width: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem);
+    height: clamp(3.168125rem, 2.921517857142857rem + 1.2330357142857145vw, 4.03125rem);
 }
 
 .comp-button-text {
@@ -463,4 +465,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .comps-list {
     margin: 0 auto;
     width: 100%;
+}
+
+img.emoji {
+    width: clamp(2.0625rem, 1.8660714285714286rem + 0.9821428571428571vw, 2.75rem);
+    margin: clamp(0.365625rem, 0.345rem + 0.10312500000000002vw, 0.46875rem);
 }

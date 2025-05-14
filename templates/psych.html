@@ -24,7 +24,7 @@
                 {% for event in events %}
                     <button type="button" name="enter" class="event-button"
                         onclick="psych_sheet('{{ event }}')">
-                        <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon"/>
+                        <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon" draggable="false"/>
                     </button>
                 {% endfor %}
             </div>
