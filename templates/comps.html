@@ -65,33 +65,9 @@
         </div>
         
         <script>
-            var windows = false;
-
-            function flag_supported() {
-                const canvas = document.createElement("canvas");
-                canvas.width = canvas.height = 16;
-                const ctx = canvas.getContext("2d");
-                ctx.textBaseline = "top";
-                ctx.font = "16px Arial";
-                ctx.fillText("🇺🇸", 0, 0);
-
-                const data = ctx.getImageData(0, 0, 16, 16).data;
-
-                return Array.from(data).some(channel => channel != 0);
-            }
-
-
-            document.addEventListener("DOMContentLoaded", function () {
-                var supported = false;
-
-                if (!supported) {
-                    windows = true;
-
-                    twemoji.parse(document.body, {
-                        folder: 'svg',
-                        ext: '.svg'
-                    });
-                }
+            twemoji.parse(document.body, {
+                folder: 'svg',
+                ext: '.svg'
             });
 
             let currentSearchQuery = "";
@@ -145,15 +121,11 @@
             
                         $('#upcoming-comps').append(comps_html);
                     }
-
-                    if (windows) {
-                        windows = true;
                         
-                        twemoji.parse(document.body, {
-                            folder: 'svg',
-                            ext: '.svg'
-                        });
-                    }
+                    twemoji.parse(document.body, {
+                        folder: 'svg',
+                        ext: '.svg'
+                    });
                     
                     page += 1;
                     get_more_comps(page);
@@ -233,15 +205,11 @@
                         document.querySelector('.loading-container-s').style.display = 'block';
 
                         search_done_loading = false;
-
-                        if (windows) {
-                            windows = true;
                             
-                            twemoji.parse(document.body, {
-                                folder: 'svg',
-                                ext: '.svg'
-                            });
-                        }
+                        twemoji.parse(document.body, {
+                            folder: 'svg',
+                            ext: '.svg'
+                        });
 
                         page += 1
 

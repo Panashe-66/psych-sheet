@@ -100,7 +100,7 @@ input[type="number"]::-webkit-inner-spin-button {
     align-items: center;
     justify-content: center;
     float: left;
-    font-size: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem);
+    /* font-size: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem); */
     width: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem);
     height: clamp(3.168125rem, 2.921517857142857rem + 1.2330357142857145vw, 4.03125rem);
 }
@@ -468,6 +468,6 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 img.emoji {
-    width: clamp(2.0625rem, 1.8660714285714286rem + 0.9821428571428571vw, 2.75rem);
-    margin: clamp(0.365625rem, 0.345rem + 0.10312500000000002vw, 0.46875rem);
+    width: clamp(2.3125rem, 2.080357142857143rem + 1.1607142857142858vw, 3.125rem);
+    margin: clamp(0.365625rem, 0.345rem + 0.10312500000000002vw, 0.46875rem) 0;
 }
