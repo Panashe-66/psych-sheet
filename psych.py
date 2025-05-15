@@ -52,7 +52,7 @@ def get_psych_sheet(competitors, event, solves):
         time_list.sort()
 
         avg = round(sum(time_list) / len(time_list), 2) if time_list else None
-
+        
         return avg
 
     def process_competitor(competitor):
@@ -74,8 +74,11 @@ def get_psych_sheet(competitors, event, solves):
 
     results.sort(reverse=(event == '333mbf'))
     
-    if event not in ['333mbf', '333fm']:
-
+    if event == '333mbf':
+        results = [(f'{avg:.2f} Pts', name) for avg, name in results]
+    elif event == '333fm':
+        results = [(f'{avg:.2f}', name) for avg, name in results]
+    else:
         def sec_to_hms(sec):
             hours, sec = divmod(sec, 3600)
             min, sec = divmod(sec, 60)
@@ -88,8 +91,6 @@ def get_psych_sheet(competitors, event, solves):
             )
         
         results = [(sec_to_hms(avg), name) for avg, name in results]
-    else:
-        results = [(f'{avg:.2f}', name) for avg, name in results]
 
     prev_rank, prev_avg = 0, 0
 
@@ -194,7 +195,7 @@ def get_competitors(comp_id):
     
     if response.status_code != 200:
         return []
-
+    
     competitors = response.json().get("persons", [])
 
     def valid_competitor(competitor):
