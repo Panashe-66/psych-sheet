@@ -41,7 +41,7 @@ def deauth():
 
 @app.route('/')
 def home():
-    return 'Skibidi Toilet Rizzlers'
+    return '"Skibidi Toilet Rizzlers" - Leland Pak ❤️'
 
 #--Psych Sheet-
 
