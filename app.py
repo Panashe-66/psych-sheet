@@ -5,7 +5,7 @@ from oauth import get_token, get_user_info
 from cache import get_cache, save_cache, extend_cache
 
 app = Flask(__name__)
-app.secret_key = secret_key(32)
+app.secret_key = '123abcpspsych'
 
 #--Oauth--
 
