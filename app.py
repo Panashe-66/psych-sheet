@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template as html, session as cookie, redirect, url_for, jsonify
+from flask import Flask, request, render_template as html, session, redirect, url_for, jsonify
 from secrets import token_urlsafe as secret_key
 from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, utc_now, comps_duplicate_lock, EVENT_SETTINGS_DATA
 from oauth import get_token, get_user_info
@@ -18,11 +18,11 @@ def auth():
         access_token = get_token(code)
 
         if access_token:
-            cookie['access_token'] = access_token
-            cookie['logged_in'] = True
-            cookie['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
-            cookie['user_id'] = get_user_info(access_token, 'id')
-            cookie['name'] = get_user_info(access_token, 'name')
+            session['access_token'] = access_token
+            session['logged_in'] = True
+            session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
+            session['user_id'] = get_user_info(access_token, 'id')
+            session['name'] = get_user_info(access_token, 'name')
 
         return redirect(url or url_for('home'))
 
@@ -30,11 +30,11 @@ def auth():
 def deauth():
     url = request.args.get('url', url_for('home'))
 
-    cookie.pop('access_token', None)
-    cookie.pop('logged_in', None)
-    cookie.pop('pfp', None)
-    cookie.pop('user_id', None)
-    cookie.pop('name', None)
+    session.pop('access_token', None)
+    session.pop('logged_in', None)
+    session.pop('pfp', None)
+    session.pop('user_id', None)
+    session.pop('name', None)
 
     return redirect(url or url_for('home'))
 
@@ -72,12 +72,12 @@ def comps():
 
             return jsonify(upcoming_comps)
     
-    logged_in = cookie.get('logged_in', False)
+    logged_in = session.get('logged_in', False)
 
     now = get_cache('utc_now', lambda: utc_now(), 600)
-    
+
     if logged_in:
-        your_comps = get_comps('user', user_id=cookie.get('user_id'), now=now)
+        your_comps = get_comps('user', user_id=session.get('user_id'), now=now)
     else:
         your_comps = None
 
