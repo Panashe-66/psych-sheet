@@ -74,12 +74,12 @@ def comps():
     
     logged_in = cookie.get('logged_in', False)
 
+    now = get_cache('utc_now', lambda: utc_now(), 600)
+    
     if logged_in:
-        your_comps = get_comps('user', user_id=cookie.get('user_id'))
+        your_comps = get_comps('user', user_id=cookie.get('user_id'), now=now)
     else:
         your_comps = None
-
-    now = get_cache('utc_now', lambda: utc_now(), 600)
 
     ongoing_comps = get_cache('ongoing_comps', lambda: get_comps('ongoing', now=now), 600)
     upcoming_comps = get_cache('upcoming_comps', lambda: get_comps('upcoming', 25, 1, now=now), 600)
