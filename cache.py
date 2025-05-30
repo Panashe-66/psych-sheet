@@ -6,7 +6,7 @@ def save_cache(name, value, expiration=600):
     expiry_time = time.time() + expiration
     caches[name] = (value, expiry_time)
 
-def cache(name, func, expiration=600):
+def get_cache(name, func, expiration=600):
     if name in caches:
         value, expiry_time = caches[name]
         if time.time() < expiry_time:
@@ -17,4 +17,10 @@ def cache(name, func, expiration=600):
     value = func()
     save_cache(name, value, expiration)
     return value
-            
+
+def extend_cache(name, value, expiration):
+    if name in caches:
+        old_value, _ = caches[name]
+        value = old_value + value
+
+    save_cache(name, value, expiration)

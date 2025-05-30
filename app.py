@@ -1,10 +1,11 @@
-from flask import Flask, request, render_template, session, redirect, url_for, jsonify
-from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, EVENT_SETTINGS_DATA
+from flask import Flask, request, render_template as html, session as cookie, redirect, url_for, jsonify
+from secrets import token_urlsafe as secret_key
+from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, utc_now, comps_duplicate_lock, EVENT_SETTINGS_DATA
 from oauth import get_token, get_user_info
-from cache import cache
+from cache import get_cache, save_cache, extend_cache
 
 app = Flask(__name__)
-app.secret_key = 'pspsych'
+app.secret_key = secret_key(32)
 
 #--Oauth--
 
@@ -17,11 +18,11 @@ def auth():
         access_token = get_token(code)
 
         if access_token:
-            session['access_token'] = access_token
-            session['logged_in'] = True
-            session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
-            session['user_id'] = get_user_info(access_token, 'id')
-            session['name'] = get_user_info(access_token, 'name')
+            cookie['access_token'] = access_token
+            cookie['logged_in'] = True
+            cookie['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
+            cookie['user_id'] = get_user_info(access_token, 'id')
+            cookie['name'] = get_user_info(access_token, 'name')
 
         return redirect(url or url_for('home'))
 
@@ -29,11 +30,11 @@ def auth():
 def deauth():
     url = request.args.get('url', url_for('home'))
 
-    session.pop('access_token', None)
-    session.pop('logged_in', None)
-    session.pop('pfp', None)
-    session.pop('user_id', None)
-    session.pop('name', None)
+    cookie.pop('access_token', None)
+    cookie.pop('logged_in', None)
+    cookie.pop('pfp', None)
+    cookie.pop('user_id', None)
+    cookie.pop('name', None)
 
     return redirect(url or url_for('home'))
 
@@ -48,48 +49,58 @@ def home():
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
     if request.method == "POST":
+        now = get_cache('utc_now', lambda: utc_now(), 600)
+
         if request.form['type'] == 's':
-            searched_comps = get_comps('search', 25, request.form['page'], search=request.form['search'])
+            searched_comps = get_comps('search', 25, request.form['page'], search=request.form['search'], now=now)
+
             return jsonify(searched_comps)
-        else:
-            page = int(request.form.get("page", 2))
-            upcoming_comps = get_comps('upcoming', 25, page)
+        
+        elif request.form['type'] == 'm':
+            with comps_duplicate_lock():
+                if get_cache('comps_done', lambda: False, 600) == False:
+                    page = int(request.form.get("page", 2))
+
+                    upcoming_comps = get_comps('upcoming', 25, page, now=now)
+                    extend_cache('upcoming_comps', upcoming_comps, 600)
+                    save_cache('comps_page', page + 1, 600)
+
+                    if upcoming_comps == []:
+                        save_cache('comps_done', True, 600)
+                else:
+                    upcoming_comps = []
 
             return jsonify(upcoming_comps)
     
-    logged_in = session.get('logged_in', False)
+    logged_in = cookie.get('logged_in', False)
 
     if logged_in:
-        your_comps = get_comps('user', user_id=session.get('user_id'))
+        your_comps = get_comps('user', user_id=cookie.get('user_id'))
     else:
         your_comps = None
 
-    ongoing_comps = cache('ongoing_comps',
-                          lambda: get_comps('ongoing'),
-                          600
-                        )
+    now = get_cache('utc_now', lambda: utc_now(), 600)
 
-    upcoming_comps = cache('upcoming_comps',
-                        lambda: get_comps('upcoming', 25, 1),
-                        600
-                    )
+    ongoing_comps = get_cache('ongoing_comps', lambda: get_comps('ongoing', now=now), 600)
+    upcoming_comps = get_cache('upcoming_comps', lambda: get_comps('upcoming', 25, 1, now=now), 600)
+
+    page = get_cache('comps_page', lambda: 2, 600)
 
     breadcrumbs = zip(
         ['Home', 'Psych Sheet'],
         [url_for('home'), '']
     )
 
-    return render_template('comps.html',
-                            comps={'your': your_comps, 'ongoing': ongoing_comps, 'upcoming': upcoming_comps}, breadcrumbs=breadcrumbs
+    return html('comps.html',
+                            comps={'your': your_comps, 'ongoing': ongoing_comps, 'upcoming': upcoming_comps},
+                            breadcrumbs=breadcrumbs,
+                            page=page
                         )
 
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
 def psych_sheet(comp):
     if request.method == "POST":
-        competitors = cache(f'{comp} competitors',
-                            lambda: get_competitors(comp),
-                            600
-                        )
+        competitors = get_cache(f'{comp} competitors', lambda: get_competitors(comp), 600)
 
         solves = int(request.form["solves"])
         event = request.form.get('event')
@@ -98,22 +109,17 @@ def psych_sheet(comp):
 
         return jsonify(psych_sheet)
 
-    competitors = cache(f'{comp} competitors',
-                        lambda: get_competitors(comp),
-                        600
-                    )
+    competitors = get_cache(f'{comp} competitors', lambda: get_competitors(comp), 600)
 
     name, short_name, events = get_comp_info(comp)
-
-    psych_sheet = session.get('psych_sheet', None)
 
     breadcrumbs = zip(
         ['Home', 'Psych Sheet', short_name],
         [url_for('home'), url_for('comps'), '']
     )
 
-    return render_template('psych.html',
-                            psych_sheet=psych_sheet,
+    return html('psych.html',
+                            psych_sheet=None,
                             events=events,
                             all_events=EVENT_SETTINGS_DATA,
                             comp_id=comp, comp_name=name,

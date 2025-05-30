@@ -44,9 +44,15 @@
         {% endif %}
     </header>
 
-    {% block content %}{% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            window.scrollTo(0, 0);
+        });
+        
         function toggle_logout() {
             const logout = document.querySelector('.logout');
             
@@ -75,7 +81,7 @@
         function update_header_height() {
             const header = document.querySelector('.header');
             const header_height = header.offsetHeight;
-            document.documentElement.style.setProperty('--header-height', `${header_height}px`);
+            document.documentElement.style.setProperty('--header-topo', `${header_height}px`);
         }
 
         window.addEventListener('resize', update_header_height);

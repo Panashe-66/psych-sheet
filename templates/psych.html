@@ -32,25 +32,30 @@
 
         <button onclick='scroll_to_user({{ session.get("name") | tojson }})' class="show-user">Find Me</button>
 
+        <div class="header-hider"></div>
+
         <div class="skeleton-psych">
             <table>
-                <tr>
-                    <th>Seed</th>
-                    <th>Name</th>
-                    <th>Seed Result</th>
-                </tr>
-                
-                {% for competitor in competitors %}
+                <thead>
                     <tr>
-                        <td><div class="skeleton skeleton-psych-seed"></div></td>
-                        <td><div class="skeleton skeleton-psych-name"></div></td>
-                        <td><div class="skeleton skeleton-psych-avg"></div></td>
+                        <th class="table-header">Seed</th>
+                        <th>Name</th>
+                        <th>Seed Result</th>
                     </tr>
-                {% endfor %}
-
+                </thead>
+                <tbody>
+                
+                    {% for competitor in competitors %}
+                        <tr>
+                            <td><div class="skeleton skeleton-psych-seed"></div></td>
+                            <td><div class="skeleton skeleton-psych-name"></div></td>
+                            <td><div class="skeleton skeleton-psych-avg"></div></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
-
+        
         <div class="psych-sheet"></div>
 
         <h2 class="select-event">Select An Event</h2>
@@ -70,7 +75,7 @@
                                     autocomplete="off"
                                     inputmode="numeric"
                                     name="solves-{{ event }}" 
-                                    type="number" 
+                                    type="number"
                                     value='{{ event_value }}'
                                     max="250" 
                                     min="3"
@@ -85,7 +90,11 @@
                     <button onclick="reset_settings()" class="reset">Reset Values</button>
             </div>
         </div>
-    
+
+        <button onclick="window.scrollTo({ top:0, behavior: 'smooth' });" class="scroll-top" id="scroll-top">
+            <img src="../static/Icons/up-arrow.svg" class="up-arrow" draggable="false">
+            Scroll to Top
+        </button>
 
 
         <script>
@@ -96,7 +105,13 @@
             const body = document.body;
             let latestFetchId = 0;
 
+            let scroll_timeout;
+            let last_scroll = window.scrollY;
+            let scroll_top_hover = false;
+
             function psych_sheet(event) {
+                currentEvent = event;
+                
                 const fetchId = ++latestFetchId;
 
                 const event_buttons = Array.from(document.querySelectorAll('.event-button'));
@@ -112,7 +127,6 @@
 
                 const solves_input = document.querySelector(`input[name='solves-${event}']`);
 
-                currentEvent = event;
                 currentSolves = solves_input.value;
 
         
@@ -131,16 +145,21 @@
                     if (Array.isArray(data)) {
                         const table = `
                             <table>
-                                <tr>
-                                    <th>Seed</th>
-                                    <th>Name</th>
-                                    <th>Seed Result</th>
-                                </tr>${data.map(p => `
-                                <tr>
-                                    <td class="psych-seed">${p[0]}</td>
-                                    <td class="psych-name">${p[1]}</td>
-                                    <td class="psych-avg">${p[2]}</td>
-                                </tr>`).join('')}
+                                <thead>
+                                    <tr>
+                                        <th>Seed</th>
+                                        <th>Name</th>
+                                        <th>Seed Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                ${data.map(p => `
+                                    <tr>
+                                        <td class="psych-seed">${p[0]}</td>
+                                        <td class="psych-name">${p[1]}</td>
+                                        <td class="psych-avg">${p[2]}</td>
+                                    </tr>`).join('')}
+                                </tbody>
                             </table>
                         `;
         
@@ -211,7 +230,7 @@
                 for (let row of rows) {
                     let name_cell = row.querySelector('td:nth-child(2)');
                     if (name_cell && name_cell.textContent.trim() === name.trim()) {
-                        row.scrollIntoView({ behavior: 'smooth', block: 'center'});
+                        row.scrollIntoView({ block: 'center', behavior: "smooth" });
                         row.classList.add('user-row');
                         break;
                     }
@@ -269,6 +288,45 @@
 
                 setTimeout(function(){ div.style.display = "none"; }, 600);
             }
+
+
+            const scroll_top = document.getElementById('scroll-top');
+
+            scroll_top.addEventListener('mouseenter', () => {
+                scroll_top_hover = true;
+                clearTimeout(scroll_timeout);
+            });
+
+            scroll_top.addEventListener('mouseleave', () => {
+                scroll_top_hover = false;
+
+                scroll_timeout = setTimeout(() => {
+                    if (window.scrollY > 750 && window.scrollY === last_scroll && !scroll_top_hover) {
+                        scroll_top.classList.remove('show');
+                    }
+                }, 2500);
+            });
+
+            window.addEventListener('scroll', function () {
+                const scroll_top = document.getElementById('scroll-top');
+
+                if (window.scrollY > 750) {
+                    scroll_top.classList.add('show');
+
+                    clearTimeout(scroll_timeout);
+                    
+                    scroll_timeout = setTimeout(() => {
+                        if (window.scrollY === last_scroll && !scroll_top_hover) {
+                            scroll_top.classList.remove('show');
+                        }
+                    }, 2500);
+                } else {
+                    scroll_top.classList.remove('show');
+                    clearTimeout(scroll_timeout);
+                }
+                
+                last_scroll = window.scrollY;
+            });
         </script>
 
 

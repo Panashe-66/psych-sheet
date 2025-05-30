@@ -1,6 +1,7 @@
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from threading import Lock
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -24,6 +25,14 @@ EVENT_SETTINGS_DATA = [
     ('333mbf', '3x3 Multi-Blind', 6)
 ]
 
+def comps_duplicate_lock():
+    if not hasattr(comps_duplicate_lock, "_lock"):
+        comps_duplicate_lock._lock = Lock()
+
+    return comps_duplicate_lock._lock
+
+def utc_now():
+    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
@@ -67,7 +76,7 @@ def get_psych_sheet(competitors, event, solves):
                 return avg, name
             return None
 
-    with ThreadPoolExecutor(max_workers=75) as executor:
+    with ThreadPoolExecutor(max_workers=40) as executor:
         results = [
             result for result in executor.map(process_competitor, competitors) if result
         ]
@@ -100,9 +109,8 @@ def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, per_page=25, page=1, user_id=None, search=None):
-    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
+    today = now[:10]
 
     comps = []
     
@@ -199,10 +207,13 @@ def get_competitors(comp_id):
     competitors = response.json().get("persons", [])
 
     def valid_competitor(competitor):
+        reg = competitor.get("registration")
+
         if (
             competitor.get("wcaId") and
-            competitor.get("registration") and
-            competitor["registration"].get("isCompeting")
+            reg and
+            reg.get("isCompeting") and
+            reg.get("status") == 'accepted'
         ):
             return {
                 "wcaId": competitor["wcaId"],

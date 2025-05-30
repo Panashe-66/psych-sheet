@@ -1,6 +1,5 @@
 @import url("base.css");
 
-
 .solves {
     width: 50px;
     height: 35px;
@@ -15,6 +14,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .events-container {
     font-size: 0;
+    margin: 0 15px;
 }
 
 .event-icon {
@@ -100,7 +100,6 @@ input[type="number"]::-webkit-inner-spin-button {
     align-items: center;
     justify-content: center;
     float: left;
-    /* font-size: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem); */
     width: clamp(2.4375rem, 2.2484375rem + 0.9453125vw, 3.3828125rem);
     height: clamp(3.168125rem, 2.921517857142857rem + 1.2330357142857145vw, 4.03125rem);
 }
@@ -143,6 +142,10 @@ input[type="number"]::-webkit-inner-spin-button {
     position: relative;
     margin: 0 auto;
     display: block;
+
+    @media (max-width: 425px) {
+        height: 6px;
+    }
 }
 
 .loading-bar {
@@ -183,17 +186,41 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-top: 25px;
     display: inline-block;
     padding: 0;
-    max-width: 88%;
+    max-width: 90%;
 
     table {
-        border-collapse: collapse;
-        overflow: hidden;
-        border-radius: 15px;
+        border-radius: 20px;
         border-spacing: 0;
-        box-shadow: 0 0 0 2px #343434;
+        table-layout: fixed;
+    }
+
+    thead::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        height: 20px;
+        width: 100%;
+        background: var(--bg);
+        display: block;
+        z-index: -1;
+    }
+
+    tbody {
+        position: relative;
+        z-index: -2;
+        border: 2px solid #343434;
+    }
+
+    tr:last-child td:first-child {
+        border-bottom-left-radius: 20px;
     }
     
-    .psych-seed {
+    tr:last-child td:last-child {
+        border-bottom-right-radius: 20px;
+    }
+    
+    .psych-seed,
+    .psych-avg {
         text-align: right;
     }
     
@@ -201,50 +228,78 @@ input[type="number"]::-webkit-inner-spin-button {
         text-align: left;
     }
     
-    .psych-avg {
-        text-align: right;
-    }
-    
     th {
         background-color: #1e2429;
         padding-top: 22px;
         padding-bottom: 22px;
-        font-style: 11px;
         font-weight: 900;
-        border-bottom: 2px solid #343434;
-        font-size: 17px;
+        border: 2px solid #343434;
+        font-size: clamp(0.9375rem, 0.8928571428571429rem + 0.2232142857142857vw, 1.09375rem);
+        box-sizing: border-box;
+
+        @media (max-width: 450px) {
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+    }
+
+    th:first-child,
+    th:nth-child(2),
+    td:first-child,
+    td:nth-child(2) {
+        border-right: none;
+    }
+
+    th:nth-child(3),
+    th:nth-child(2),
+    td:nth-child(3),
+    td:nth-child(2) {
+        border-left: none;
+    }
+
+    thead {
+        position: sticky;
+        top: var(--header-top);
     }
     
     td {
-        padding: 20px 35px;
-        border-bottom: 2px solid #343434;
+        border: 2px solid #343434;
+        border-top: none;
+        font-size: clamp(0.859375rem, 0.815625rem + 0.21874999999999994vw, 1.0125rem);
     }
     
     tr:nth-child(odd){
         background-color: #11161A;
     }
+
+    td:first-child {
+        max-width: fit-content;
+    }
     
     th:first-child {
-        border-top-left-radius: 15px;
-    }
-    
-    th:last-child {
-        border-top-right-radius: 15px;
-    }
-    
-    tr:last-child td:first-child {
-        border-bottom-left-radius: 15px;
-    }
-    
-    tr:last-child td:last-child {
-        border-bottom-right-radius: 15px;
-    }
-    
-    th:nth-child(1) {
         width: 50px;
         padding-left: 40px;
         padding-right: 20px;
         text-align: right;
+        border-top-left-radius: 20px;
+
+        @media (max-width: 450px) {
+            padding-left: 20px;
+            padding-right: 10px;
+        }
+    }
+
+    td:first-child, 
+    td:nth-child(2) {
+        padding: 20px 35px;
+
+        @media (max-width: 450px) {
+            padding: 19px 20px;
+
+            td:nth-child(2) {
+                padding-left: 0px !important;
+            }
+        }
     }
     
     th:nth-child(2) {
@@ -252,21 +307,35 @@ input[type="number"]::-webkit-inner-spin-button {
         padding-left: 34px;
         padding-right: 20px;
         text-align: left;
+        
+        @media (max-width: 450px) {
+            padding-left: 20px;
+        }
     }
     
     th:nth-child(3) {
-        width: 100px;
+        width: 150px;
         padding-right: 35px;
-        padding-left: 50px;
+        padding-left: 0;
         text-align: right;
+        border-top-right-radius: 20px;
+
+        @media (max-width: 450px) {
+            padding-right: 25px;
+        }
     }
-    
+
     td:nth-child(3) {
-        padding-right: 60px;
-    }
-    
-    tr:last-child td {
-        border-bottom: none;
+        width: 100px;
+        padding-right: 50px;
+        padding-left: 35px;
+        padding-top: 25px;
+        padding-bottom: 25px;
+
+        @media (max-width: 450px) {
+            padding: 19px 20px;
+            padding-left: 0;
+        }
     }
 }
 
@@ -373,11 +442,28 @@ input[type="number"]::-webkit-inner-spin-button {
         padding-right: 35px;
     }
 
+    @media (max-width: 450px) {
+        td:nth-child(1),
+        td:nth-child(2),
+        td:nth-child(3) {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        td:nth-child(1) {
+            padding-right: 10px;
+        }
+    }
+
     .skeleton-psych-seed,
     .skeleton-psych-name,
     .skeleton-psych-avg {
         height: 20px;
         border-radius: 15px;
+
+        @media (max-width: 450px) {
+            height: 18px;
+        }
     }
 }
 
@@ -436,17 +522,27 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 42px;
     border-radius: 300px;
     padding-left: 14px;
-    margin: 0 25px 15px 25px;
+    margin: 32px 25px 32px 25px;
     font-size: 13px;
     max-width: 80%;
+
+    @media (max-width: 1024px) {
+        height: 39px;
+        margin-bottom: 30px;
+        margin-top: 30px;
+    }
 
     @media (max-width: 768px) {
         height: 38px;
         font-size: 12px;
+        margin-bottom: 25px;
+        margin-top: 25px;
     }
 
-    @media (max-width: 1024px) {
-        height: 40px;
+    @media (max-width: 425px) {
+        margin-bottom: 20px;
+        height: 35px;
+        margin-top: 20px;
     }
 }
 
@@ -470,4 +566,76 @@ input[type="number"]::-webkit-inner-spin-button {
 img.emoji {
     width: clamp(2.3125rem, 2.080357142857143rem + 1.1607142857142858vw, 3.125rem);
     margin: clamp(0.365625rem, 0.345rem + 0.10312500000000002vw, 0.46875rem) 0;
+}
+
+.scroll-top {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    bottom: 18px;
+    width: fit-content;
+    height: 35px;
+    min-height: fit-content;
+    opacity: 0;
+    justify-content: center;
+    color: var(--primary);
+    border-radius: 100px;
+    border: none;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: clamp(0.9375rem, 0.9017857142857143rem + 0.17857142857142858vw, 1.0625rem);
+    padding: 4px 12px;
+    background-color: var(--bg);
+    border: 1.5px solid var(--primary);
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.7s ease;
+    pointer-events: none;
+    font-weight: 550;
+    transform: translate(-50%, 100px);
+}
+
+.scroll-top:hover {
+    color: black;
+    background: var(--primary);
+
+    .up-arrow {
+        filter: brightness(0) saturate(100%);
+    }
+}
+
+.scroll-top.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}
+
+.up-arrow {
+    height: clamp(0.9375rem, 0.9017857142857143rem + 0.17857142857142858vw, 1.0625rem);
+    width: auto;
+    margin-right: 8px;
+    transition: filter 0.3s ease;
+}
+
+.header-hider {
+    display: none;
+    background-color: var(--bg);
+    height: calc(var(--header-top) + 30px);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    z-index: -1;
+}
+
+.search-div {
+    position: sticky;
+    top: var(--header-top);
+    background-color: var(--bg);
+}
+
+.comps-header:first-of-type {
+    margin-top: 0;
+}
+
+.title-comps {
+    margin-bottom: 0 !important;
 }

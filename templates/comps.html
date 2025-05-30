@@ -16,9 +16,11 @@
 
     {% block content %}
 
-    <h1 class="title">Psych Sheet</h1>
-        
-    <input type="text" placeholder="Search Competitions" class="search" autocomplete="off">
+    <h1 class="title title-comps">Psych Sheet</h1>
+
+    <div class="search-div">
+        <input type="text" placeholder="Search Competitions" class="search" autocomplete="off">
+    </div>
 
     <div class="search-results">
         <div class="comp-container"></div>
@@ -27,19 +29,19 @@
     <div class="comps-list">
         {% for when, comps in comps.items() %}
             {% if comps %}
-                <h1>{{ when.capitalize() }} Competitions</h1>
-                <div class="comp-container" {% if when == 'upcoming' %} id="upcoming-comps" {% endif %}>
-                {% for comp in comps %}
-                    <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
-                        <div class="comp-button">
-                            <div class="flag">{{ comp.flag }}</div>
-                            <div class="comp-button-text">
-                                <p class="comp-name">{{ comp.name }}</p>
-                                <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
+                <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
+                    {% for comp in comps %}
+                        <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                            <div class="comp-button">
+                                <div class="flag">{{ comp.flag }}</div>
+                                <div class="comp-button-text">
+                                    <p class="comp-name">{{ comp.name }}</p>
+                                    <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                                </div>
                             </div>
-                        </div>
-                    </a>
-                {% endfor %}
+                        </a>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endfor %}
@@ -72,7 +74,7 @@
 
             let currentSearchQuery = "";
 
-            var page = 2;
+            var page = {{ page | tojson }};
 
             var search_done_loading = false;
 
@@ -106,14 +108,14 @@
             
                     for (var index = 0; index < comps.length; index++) {
                         var comp = comps[index];
-            
+                        
                         var comps_html = `
-                            <a href="/psych_sheet/${comp.id}">
+                            <a href="/psych_sheet/${ comp.id }" id="comp-${ comp.id }">
                                 <div class="comp-button">
                                     <div class="flag">${ comp.flag }</div>
                                     <div class="comp-button-text">
-                                        <p class="comp-name">${comp.name}</p>
-                                        <p class="comp-details">${comp.date} - ${comp.city}</p>
+                                        <p class="comp-name">${ comp.name }</p>
+                                        <p class="comp-details">${ comp.date } - ${ comp.city }</p>
                                     </div>
                                 </div>
                             </a>
@@ -166,6 +168,7 @@
                 document.querySelector('.search').classList.add('search-active');
                 document.querySelector('.search').classList.add('search-results-active');
                 document.querySelector('.comps-list').style.display = 'none';
+                
 
                 const resultsDiv = document.querySelector('.search-results');
         

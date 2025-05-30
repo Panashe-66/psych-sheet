@@ -1,5 +1,3 @@
-@import url("header.css");
-
 :root {
     --bg: #0d1215;
     --primary: rgb(0, 140, 255);
@@ -9,11 +7,19 @@
 
 /* REMOVE */
 html, body {
-    overflow-x: hidden; 
+    /* overflow-x: hidden;  */
+}
+
+main {
+    margin-top: 35px;
+
+    @media (max-width: 425px) {
+        margin-top: 25px;
+    }
 }
 
 body {
-    margin-top: calc(var(--header-height) + 30px);
+    margin-top: 0;
     margin-bottom: 50px;
     background-color: var(--bg);
     color: white;
@@ -25,10 +31,6 @@ body {
     margin-left: 0;
     margin-right: 0;
     max-width: 100%;
-
-    @media (max-width: 425px) {
-        margin-top: calc(var(--header-height) + 25px);
-    }
 }
 
 button {
