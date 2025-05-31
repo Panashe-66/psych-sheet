@@ -35,6 +35,9 @@ def get_user_info(token, info, avatar=False):
 
     if avatar:
         info = data('avatar').get(info)
+
+        if info == 'https://assets.worldcubeassociation.org/assets/0554313/assets/missing_avatar_thumb-d77f478a307a91a9d4a083ad197012a391d5410f6dd26cb0b0e3118a5de71438.png':
+            return 'no pfp'
     else:
         info = data(info)
 

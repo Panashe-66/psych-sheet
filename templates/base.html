@@ -40,7 +40,11 @@
 
             <div class="spinner"></div>
 
-            <img src="{{ session.get('pfp') }}" class="pfp" width="1" height="1" onclick="toggle_logout()" draggable="false">
+            {% if session.get('pfp') != 'no pfp' %}
+                <img src="{{ session.get('pfp') }}" class="pfp" width="1" height="1" onclick="toggle_logout()" draggable="false">
+            {% else %}
+                <img src="../static/Icons/no-pfp.png" class="pfp" width="1" height="1" onclick="toggle_logout()" draggable="false">
+            {% endif %}
         {% endif %}
     </header>
 
