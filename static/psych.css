@@ -639,3 +639,13 @@ img.emoji {
 .title-comps {
     margin-bottom: 0 !important;
 }
+
+.no-comps-user {
+    font-size: clamp(1.1875rem, 1.1160714285714286rem + 0.35714285714285715vw, 1.4375rem);
+    margin-bottom: 30px;
+    font-style: italic;
+
+    @media (max-width: 425px) {
+        margin-bottom: 25px;
+    }
+}
