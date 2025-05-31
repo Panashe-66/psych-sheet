@@ -29,20 +29,24 @@
     <div class="comps-list">
         {% for when, comps in comps.items() %}
             {% if comps %}
-                <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
-                <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
-                    {% for comp in comps %}
-                        <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
-                            <div class="comp-button">
-                                <div class="flag">{{ comp.flag }}</div>
-                                <div class="comp-button-text">
-                                    <p class="comp-name">{{ comp.name }}</p>
-                                    <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                {% if when == 'your' and comps == 'No Comps User' %}
+                    <h2>No Signed Up Comps</h2>
+                {% else %}
+                    <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
+                    <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
+                        {% for comp in comps %}
+                            <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                                <div class="comp-button">
+                                    <div class="flag">{{ comp.flag }}</div>
+                                    <div class="comp-button-text">
+                                        <p class="comp-name">{{ comp.name }}</p>
+                                        <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% endif %}
         {% endfor %}
     </div>

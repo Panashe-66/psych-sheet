@@ -140,6 +140,10 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
         ongoing_comps = sorted(ongoing_comps, key=lambda comp: comp["start_date"])
 
         comps = ongoing_comps + upcoming_comps
+        
+        if not comps:
+            return 'No Comps User'
+        
     elif when == 'ongoing':
         comps = [comp for comp in comps if comp["end_date"] >= today and comp["start_date"] <= today]
     elif when =='upcoming' or when == 'search':
