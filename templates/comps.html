@@ -31,7 +31,7 @@
             {% if comps %}
                 <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
                 {% if when == 'your' and comps == 'No Comps User' %}
-                    <h2>No Signed Up Comps</h2>
+                    <h2 class="no-comps-user">You have no upcoming comps</h2>
                 {% else %}
                     <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
                         {% for comp in comps %}
