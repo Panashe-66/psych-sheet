@@ -29,10 +29,10 @@
     <div class="comps-list">
         {% for when, comps in comps.items() %}
             {% if comps %}
+                <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
                 {% if when == 'your' and comps == 'No Comps User' %}
                     <h2>No Signed Up Comps</h2>
                 {% else %}
-                    <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
                     <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
                         {% for comp in comps %}
                             <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
