@@ -87,7 +87,7 @@
         function update_header_height() {
             const header = document.querySelector('.header');
             const header_height = header.offsetHeight;
-            document.documentElement.style.setProperty('--header-topo', `${header_height}px`);
+            document.documentElement.style.setProperty('--header-top', `${header_height}px`);
         }
 
         window.addEventListener('resize', update_header_height);
