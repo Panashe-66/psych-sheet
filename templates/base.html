@@ -91,7 +91,9 @@
             console.log(header_height);
         }
 
-        window.addEventListener('resize', update_header_height);
-        window.addEventListener('load', update_header_height);
+        window.addEventListener('DOMContentLoaded', () => {
+            window.addEventListener('resize', update_header_height);
+            window.addEventListener('load', update_header_height);
+        });
     </script>
 </body>
