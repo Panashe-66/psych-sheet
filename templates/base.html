@@ -52,12 +52,16 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if session.get("logged_in") %}
+        <script>
+            document.querySelector('.logout').style.display = 'none';
+        </script>
+    {% endif %}
+    
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             window.scrollTo(0, 0);
         });
-        
-        document.querySelector('.logout').style.display = 'none';
         
         function toggle_logout() {
             const logout = document.querySelector('.logout');
