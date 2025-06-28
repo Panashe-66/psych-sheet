@@ -34,7 +34,7 @@
             </a>
 
         {% else %}
-            <a href="{{ url_for('deauth', url=request.url) }}" class="logout">
+            <a href="{{ url_for('deauth', url=request.url) }}" class="logout" style="display:none;">
                 <button class="logout-button" onclick="spinner_animation()">Log Out</button>
             </a>
 
@@ -52,17 +52,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% if session.get("logged_in") %}
-        <script>
-            document.querySelector('.logout').style.display = 'none';
-        </script>
-    {% endif %}
-    
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            window.scrollTo(0, 0);
-        });
-        
         function toggle_logout() {
             const logout = document.querySelector('.logout');
             
@@ -92,13 +82,9 @@
             const header = document.querySelector('.header');
             const header_height = header.offsetHeight;
             document.documentElement.style.setProperty('--header-top', `${header_height}px`);
-            console.log(header_height);
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            update_header_height();
-        });
-
         window.addEventListener('resize', update_header_height);
+        window.addEventListener('load', update_header_height);
     </script>
 </body>

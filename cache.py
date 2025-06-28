@@ -1,15 +1,15 @@
-import time
+from time import time
 
 caches = {}
 
 def save_cache(name, value, expiration=600):
-    expiry_time = time.time() + expiration
+    expiry_time = time() + expiration
     caches[name] = (value, expiry_time)
 
 def get_cache(name, func, expiration=600):
     if name in caches:
         value, expiry_time = caches[name]
-        if time.time() < expiry_time:
+        if time() < expiry_time:
             return value
         else: #Expired
             del caches[name]

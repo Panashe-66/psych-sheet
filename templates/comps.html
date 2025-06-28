@@ -27,38 +27,27 @@
     </div>
 
     <div class="comps-list">
-        {% for when, comps in comps.items() %}
-            {% if comps %}
-                <h1 class="comps-header">{{ when.capitalize() }} Competitions</h1>
-                {% if when == 'your' and comps == 'No Comps User' %}
-                    <h2 class="no-comps-user">You have no upcoming comps</h2>
-                {% else %}
-                    <div class="comp-container"{% if when == 'upcoming' %} id="upcoming-comps"{% endif %}>
-                        {% for comp in comps %}
-                            <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
-                                <div class="comp-button">
-                                    <div class="flag">{{ comp.flag }}</div>
-                                    <div class="comp-button-text">
-                                        <p class="comp-name">{{ comp.name }}</p>
-                                        <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
-                                    </div>
+        {% if your_comps %}
+            <h1 class="comps-header">Your Competitions</h1>
+            {% if your_comps == 'No Comps User' %}
+                <h2 class="no-comps-user">You have no upcoming comps</h2>
+            {% else %}
+                <div class="comp-container">
+                    {% for comp in your_comps %}
+                        <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                            <div class="comp-button">
+                                <div class="flag">{{ comp.flag }}</div>
+                                <div class="comp-button-text">
+                                    <p class="comp-name">{{ comp.name }}</p>
+                                    <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
                                 </div>
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    </div>
-
-        <div class="loading-main">
-            <div class="loading-container">
-                <div class="loading-bar">
-                    <div class="loading-bar-inner"></div>
+                            </div>
+                        </a>
+                    {% endfor %}
                 </div>
-            </div>
-            <h2 class="no-more-comps">No More Competitions</h2>
-        </div>
+            {% endif %}
+        {% endif %}
+    </div>
 
         <div class="loading-search">
             <div class="loading-container-s">
@@ -78,79 +67,21 @@
 
             let currentSearchQuery = "";
 
-            var page = {{ page | tojson }};
-
             var search_done_loading = false;
 
-            document.querySelector('.no-more-comps').style.display = 'none';
-            document.querySelector('.loading-container').style.display = 'block';
             document.querySelector('.loading-search').style.display = 'none';
             document.querySelector('.search-results ').style.display = 'none';
-            document.querySelector('.loading-main').style.display = 'block';
             document.querySelector('.no-results').style.display = 'none';
-
-            get_more_comps(page);
-
-            function get_more_comps(page) {
-                fetch('/psych_sheet/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        'page': page,
-                        'type': 'm'
-                    })
-                })
-                .then(res => res.json())
-                .then(comps => {
-                    if (comps.length === 0) {
-                        document.querySelector('.loading-container').style.display = 'none';
-                        document.querySelector('.no-more-comps').style.display = 'block';
-                        return;
-                    }
             
-                    for (var index = 0; index < comps.length; index++) {
-                        var comp = comps[index];
-                        
-                        var comps_html = `
-                            <a href="/psych_sheet/${ comp.id }" id="comp-${ comp.id }">
-                                <div class="comp-button">
-                                    <div class="flag">${ comp.flag }</div>
-                                    <div class="comp-button-text">
-                                        <p class="comp-name">${ comp.name }</p>
-                                        <p class="comp-details">${ comp.date } - ${ comp.city }</p>
-                                    </div>
-                                </div>
-                            </a>
-                        `;
-            
-                        $('#upcoming-comps').append(comps_html);
-                    }
-                        
-                    twemoji.parse(document.body, {
-                        folder: 'svg',
-                        ext: '.svg'
-                    });
-                    
-                    page += 1;
-                    get_more_comps(page);
-                })
-                .catch(error => {
-                    get_more_comps(page)
-                });
-            }
-            
-
             function search(page) {
-                if (search_done_loading) return;
+                if (search_done_loading) {
+                    return;
+                }
 
                 search_done_loading = true;
 
-                document.querySelector('.loading-main').style.display = 'none';
                 document.querySelector('.loading-search').style.display = 'block';
                 document.querySelector('.no-results').style.display = 'none';
-
 
                 const query = document.querySelector('.search').value.trim();
                 currentSearchQuery = query;
@@ -159,11 +90,9 @@
                 document.querySelector('.loading-container-s').style.display = 'block';
 
                 if (!query) {
-                    document.querySelector('.comps-list').style.display = 'block';
                     document.querySelector('.search').classList.remove('search-active');
                     document.querySelector('.search').classList.remove('search-results-active');
                     document.querySelector('.loading-search').style.display = 'none';
-                    document.querySelector('.loading-main').style.display = 'block';
                     document.querySelector('.search-results').style.display = 'none';
                     search_done_loading = false;
                     return;
@@ -171,9 +100,7 @@
 
                 document.querySelector('.search').classList.add('search-active');
                 document.querySelector('.search').classList.add('search-results-active');
-                document.querySelector('.comps-list').style.display = 'none';
                 
-
                 const resultsDiv = document.querySelector('.search-results');
         
                 fetch('/psych_sheet/', {
@@ -183,8 +110,7 @@
                     },
                     body: new URLSearchParams({
                         'search': query,
-                        'page': page,
-                        'type': 's'
+                        'page': page
                     })
                 })
                 .then(res => res.json())           

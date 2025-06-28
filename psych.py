@@ -2,6 +2,12 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from threading import Lock
+from export import tsv
+from collections import defaultdict
+from time import time
+from orjson import loads
+
+from http_session import session
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -25,11 +31,11 @@ EVENT_SETTINGS_DATA = [
     ('333mbf', '3x3 Multi-Blind', 6)
 ]
 
-def comps_duplicate_lock():
-    if not hasattr(comps_duplicate_lock, "_lock"):
-        comps_duplicate_lock._lock = Lock()
+def remove_comp_duplicates():
+    if not hasattr(remove_comp_duplicates, "_lock"):
+        remove_comp_duplicates._lock = Lock()
 
-    return comps_duplicate_lock._lock
+    return remove_comp_duplicates._lock
 
 def utc_now():
     return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -41,14 +47,14 @@ def get_psych_sheet(competitors, event, solves):
 
     def get_avg(wca_id, event, solves, type):
         url = f'{API}/persons/{wca_id}/results'
-        response = requests.get(url)
+        response = session.get(url)
 
         if response.status_code != 200:
             return None
         
         time_list = [
             (attempt / 100 if event != '333mbf' else attempt)
-            for result in response.json()
+            for result in loads(response.content)
             if result["event_id"] == event
             for attempt in (result.get('attempts', []) if type == 'single' else [result.get('average', 0)])
             if attempt > 0
@@ -57,8 +63,6 @@ def get_psych_sheet(competitors, event, solves):
         if event == '333mbf':
             mbld_encoded = [[int(str(result)[:2]), int(str(result)[-2:])] for result in time_list]
             time_list = [(99 - result[0]) + result[1] - result[1] for result in mbld_encoded]
-        
-        time_list.sort()
 
         avg = round(sum(time_list) / len(time_list), 2) if time_list else None
         
@@ -68,6 +72,7 @@ def get_psych_sheet(competitors, event, solves):
         wca_id = competitor.get("wcaId")
         name = competitor.get("name")
         events = (competitor.get("registration") or {}).get("eventIds", [])
+        
 
         if wca_id and events and event in events:
             avg =  get_avg(wca_id, event, solves, type)
@@ -123,14 +128,14 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
     elif when == 'user':
         url = f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false'
     elif when == 'search':
-        url = f"{API}/competitions?start={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false"
+        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false"
     
-    response = requests.get(url)
+    response = session.get(url)
 
     if response.status_code != 200:
         return []
     
-    comps = response.json()
+    comps = loads(response.content)
 
     if when == 'user':
         upcoming_comps = comps.get("upcoming_competitions", [])
@@ -190,43 +195,36 @@ def get_comp_info(comp_id):
     data = []
     
     url = f'{API}/competitions/{comp_id}'
-    response = requests.get(url)
+    response = session.get(url)
 
     if response.status_code != 200:
         return []
     
-    comp = response.json().get
+    comp = loads(response.content)
 
-    data.extend([comp('name'), comp('short_name'), comp('event_ids')])
+    data.extend([comp['name'], comp['short_name'], comp['event_ids']])
         
     return data
 
 def get_competitors(comp_id):
     url = f'{API}/competitions/{comp_id}/wcif/public'
-    response = requests.get(url)
+    response = session.get(url)
     
     if response.status_code != 200:
         return []
     
-    competitors = response.json().get("persons", [])
+    data = loads(response.content)
+    competitors = data.get("persons", [])
 
-    def valid_competitor(competitor):
-        reg = competitor.get("registration")
-
-        if (
-            competitor.get("wcaId") and
-            reg and
+    return [
+        {
+            "wcaId": c["wcaId"],
+            "name": c["name"],
+            "registration": c["registration"]
+        }
+        for c in competitors
+        if (reg := c.get("registration")) and
+            c.get("wcaId") and
             reg.get("isCompeting") and
             reg.get("status") == 'accepted'
-        ):
-            return {
-                "wcaId": competitor["wcaId"],
-                "registration": competitor["registration"]
-            }
-        
-        return None
-
-    with ThreadPoolExecutor(max_workers=50) as executor:
-        competitors = list(executor.map(lambda c: c if valid_competitor(c) else None, competitors))
-
-    return [competitor for competitor in competitors if competitor]
+    ]
