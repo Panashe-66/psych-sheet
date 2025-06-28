@@ -1,9 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
-from threading import Lock
-from orjson import loads
-
-from http_session import session
+from datetime import datetime, timezone
+from json_request import get_json
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -27,14 +24,6 @@ EVENT_SETTINGS_DATA = [
     ('333mbf', '3x3 Multi-Blind', 6)
 ]
 
-def remove_comp_duplicates():
-    if not hasattr(remove_comp_duplicates, "_lock"):
-        remove_comp_duplicates._lock = Lock()
-
-    return remove_comp_duplicates._lock
-
-def utc_now():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
@@ -42,15 +31,14 @@ def get_psych_sheet(competitors, event, solves):
     type = 'single' if event in ['333bf', '444bf', '555bf', '333mbf'] else 'avg'
 
     def get_avg(wca_id, event, solves, type):
-        url = f'{API}/persons/{wca_id}/results'
-        response = session.get(url)
+        results = get_json(f'{API}/persons/{wca_id}/results')
 
-        if response.status_code != 200:
+        if results == 'error':
             return None
         
         time_list = [
             (attempt / 100 if event != '333mbf' else attempt)
-            for result in loads(response.content)
+            for result in results
             if result["event_id"] == event
             for attempt in (result.get('attempts', []) if type == 'single' else [result.get('average', 0)])
             if attempt > 0
@@ -110,28 +98,18 @@ def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
+def get_comps(when, per_page=25, page=1, user_id=None, search=None):
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
     today = now[:10]
-
-    comps = []
     
-    if when == 'ongoing':
-        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page=100&page={page}&include_cancelled=false"
-    elif when == 'upcoming':
-        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%d')
-
-        url = f"{API}/competitions?start={tomorrow}&sort=start_date,end_date,name&per_page={per_page}&page={page}&include_cancelled=false"
-    elif when == 'user':
-        url = f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false'
+    if when == 'user':
+        comps = get_json(f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false')
     elif when == 'search':
-        url = f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false"
+        comps = get_json(f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false")
     
-    response = session.get(url)
 
-    if response.status_code != 200:
+    if comps == 'error':
         return []
-    
-    comps = loads(response.content)
 
     if when == 'user':
         upcoming_comps = comps.get("upcoming_competitions", [])
@@ -144,10 +122,8 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
         
         if not comps:
             return 'No Comps User'
-        
-    elif when == 'ongoing':
-        comps = [comp for comp in comps if comp["end_date"] >= today and comp["start_date"] <= today]
-    elif when =='upcoming' or when == 'search':
+
+    elif when == 'search':
         comps = [comp for comp in comps if comp["registration_open"] <= now]
     
 
@@ -182,34 +158,22 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None, now=None):
     with ThreadPoolExecutor(max_workers=50) as executor:
         comps = list(executor.map(extract_attributes, comps))
 
-    if when == 'ongoing' and len(comps) == 100:
-        comps.extend(get_comps('ongoing', 100, page+1))
-
     return comps
 
 def get_comp_info(comp_id):
-    data = []
-    
-    url = f'{API}/competitions/{comp_id}'
-    response = session.get(url)
+    comp = get_json(f'{API}/competitions/{comp_id}')
 
-    if response.status_code != 200:
+    if comp == 'error':
         return []
-    
-    comp = loads(response.content)
 
-    data.extend([comp['name'], comp['short_name'], comp['event_ids']])
-        
-    return data
+    return ([comp['name'], comp['short_name'], comp['event_ids']])
 
 def get_competitors(comp_id):
-    url = f'{API}/competitions/{comp_id}/wcif/public'
-    response = session.get(url)
+    data = get_json(f'{API}/competitions/{comp_id}/wcif/public')
     
-    if response.status_code != 200:
+    if data == 'error':
         return []
-    
-    data = loads(response.content)
+
     competitors = data.get("persons", [])
 
     return [

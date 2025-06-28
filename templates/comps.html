@@ -37,7 +37,6 @@
             </div>
         </div>
 
-
         <div class="comps-list">
             {% if your_comps %}
                 <h1 class="comps-header">Your Competitions</h1>
@@ -59,9 +58,7 @@
                     </div>
                 {% endif %}
             {% else %}
-                <h2>
-                Or <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=https://psych-sheet.vercel.app/auth&response_type=code&state={{ request.url }}" class="login-button login-secondary">Login</a> To View Your Upcoming Comps
-                </h2>
+                <h2>Or <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=https://psych-sheet.vercel.app/auth&response_type=code&state={{ request.url }}" class="login-button login-secondary">Login</a> To View Your Upcoming Comps</h2>
             {% endif %}
         </div>
         

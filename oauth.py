@@ -1,5 +1,6 @@
 import requests
 from orjson import loads
+from json_request import get_json
 
 REDIRECT_URI = 'https://psych-sheet.vercel.app/auth'
 CLIENT_ID = 'bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs'
@@ -25,14 +26,12 @@ def get_token(code):
     return access_token
     
 def get_user_info(token, info, avatar=False):
-    url = f'https://api.worldcubeassociation.org/me?access_token={token}'
+    user_data = get_json(f'https://api.worldcubeassociation.org/me?access_token={token}')
 
-    response = requests.get(url)
-
-    if response.status_code != 200:
+    if user_data == 'error':
         return
-
-    user_data = loads(response.content).get('me')
+    
+    user_data = user_data.get('me')
 
     if avatar:
         pfp = user_data.get('avatar', {}).get(info)

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, Response, session, redirect, url_for, render_template as html
 from secrets import token_urlsafe as secret_key
-from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, utc_now, remove_comp_duplicates, EVENT_SETTINGS_DATA
+from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, EVENT_SETTINGS_DATA
 from oauth import get_token, get_user_info
 from cache import get_cache, save_cache, extend_cache
 
@@ -49,17 +49,13 @@ def home():
 
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
-    now = get_cache('utc_now', lambda: utc_now(), 600)
-
     if request.method == "POST":
-        searched_comps = get_comps('search', 25, request.form['page'], search=request.form['search'], now=now)
-
-        return jsonify(searched_comps)
+        return jsonify(get_comps('search', 25, request.form['page'], search=request.form['search']))
     
     logged_in = session.get('logged_in', False)
 
     if logged_in:
-        your_comps = get_comps('user', user_id=session.get('user_id'), now=now)
+        your_comps = get_comps('user', user_id=session.get('user_id'))
     else:
         your_comps = None
 
@@ -103,4 +99,4 @@ def psych_sheet(comp):
 
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=5000)
