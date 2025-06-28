@@ -1,10 +1,6 @@
-import requests
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from threading import Lock
-from export import tsv
-from collections import defaultdict
-from time import time
 from orjson import loads
 
 from http_session import session
