@@ -11,54 +11,60 @@
         <link rel="stylesheet" href="../static/psych.css">
     </head>
     <body>
+        {% extends "base.html" %}
 
-    {% extends "base.html" %}
+        {% block content %}
 
-    {% block content %}
+        <h1 class="title title-comps">Psych Sheet</h1>
 
-    <h1 class="title title-comps">Psych Sheet</h1>
+        <div class="search-div">
+            <input type="text" placeholder="Search Competitions" class="search" autocomplete="off">
+        </div>
 
-    <div class="search-div">
-        <input type="text" placeholder="Search Competitions" class="search" autocomplete="off">
-    </div>
+        <div class="search-box">
+            <div class="search-results">
+                <div class="comp-container"></div>
+            </div>
 
-    <div class="search-results">
-        <div class="comp-container"></div>
-    </div>
-
-    <div class="loading-search">
-        <div class="loading-container-s">
-            <div class="loading-bar">
-                <div class="loading-bar-inner"></div>
+            <div class="loading">
+                <div class="loading-container">
+                    <div class="loading-bar">
+                        <div class="loading-bar-inner"></div>
+                    </div>
+                </div>
+                <h2 class="no-results">No Competitions Found</h2>
+                <h2 class="no-more-comps">No More Competitions</h2>
             </div>
         </div>
-        <h2 class="no-results">No Competitions Found</h2>
-        <h2 class="no-more-comps-s">No More Competitions</h2>
-    </div>
 
-    <div class="comps-list">
-        {% if your_comps %}
-            <h1 class="comps-header">Your Competitions</h1>
-            {% if your_comps == 'No Comps User' %}
-                <h2 class="no-comps-user">You have no upcoming comps</h2>
-            {% else %}
-                <div class="comp-container">
-                    {% for comp in your_comps %}
-                        <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
-                            <div class="comp-button">
-                                <div class="flag">{{ comp.flag }}</div>
-                                <div class="comp-button-text">
-                                    <p class="comp-name">{{ comp.name }}</p>
-                                    <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+
+        <div class="comps-list">
+            {% if your_comps %}
+                <h1 class="comps-header">Your Competitions</h1>
+                {% if your_comps == 'No Comps User' %}
+                    <h2 class="no-comps-user">You have no upcoming comps</h2>
+                {% else %}
+                    <div class="comp-container">
+                        {% for comp in your_comps %}
+                            <a href="{{ url_for('psych_sheet', comp=comp.id) }}">
+                                <div class="comp-button">
+                                    <div class="flag">{{ comp.flag }}</div>
+                                    <div class="comp-button-text">
+                                        <p class="comp-name">{{ comp.name }}</p>
+                                        <p class="comp-details">{{ comp.date }} - {{ comp.city }}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <h2>
+                Or <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=https://psych-sheet.vercel.app/auth&response_type=code&state={{ request.url }}" class="login-button login-secondary">Login</a> To View Your Upcoming Comps
+                </h2>
             {% endif %}
-        {% endif %}
-    </div>
-    
+        </div>
+        
         <script>
             twemoji.parse(document.body, {
                 folder: 'svg',
@@ -69,9 +75,11 @@
 
             var search_done_loading = false;
 
-            document.querySelector('.loading-search').style.display = 'none';
+            document.querySelector('.loading').style.display = 'none';
             document.querySelector('.search-results ').style.display = 'none';
             document.querySelector('.no-results').style.display = 'none';
+            document.querySelector('.search-box').style.display = 'none';
+
             
             function search(page) {
                 if (search_done_loading) {
@@ -80,26 +88,23 @@
 
                 search_done_loading = true;
 
-                document.querySelector('.loading-search').style.display = 'block';
+                document.querySelector('.search-box').style.display = 'block';
+                document.querySelector('.loading').style.display = 'block';
                 document.querySelector('.no-results').style.display = 'none';
 
                 const query = document.querySelector('.search').value.trim();
                 currentSearchQuery = query;
 
-                document.querySelector('.no-more-comps-s').style.display = 'none';
-                document.querySelector('.loading-container-s').style.display = 'block';
+                document.querySelector('.no-more-comps').style.display = 'none';
+                document.querySelector('.loading-container').style.display = 'block';
 
                 if (!query) {
-                    document.querySelector('.search').classList.remove('search-active');
-                    document.querySelector('.search').classList.remove('search-results-active');
-                    document.querySelector('.loading-search').style.display = 'none';
+                    document.querySelector('.loading').style.display = 'none';
                     document.querySelector('.search-results').style.display = 'none';
+                    document.querySelector('.search-box').style.display = 'none';
                     search_done_loading = false;
                     return;
                 }
-
-                document.querySelector('.search').classList.add('search-active');
-                document.querySelector('.search').classList.add('search-results-active');
                 
                 const resultsDiv = document.querySelector('.search-results');
         
@@ -135,7 +140,7 @@
 
                         resultsDiv.querySelector('.comp-container').innerHTML += comps_html;
                         document.querySelector('.search-results').style.display = 'block';
-                        document.querySelector('.loading-container-s').style.display = 'block';
+                        document.querySelector('.loading-container').style.display = 'block';
 
                         search_done_loading = false;
                             
@@ -151,14 +156,14 @@
                         if (page === 1) {
                             document.querySelector('.no-results').style.display = 'block';
                             document.querySelector('.search-results').style.display = 'none';
-                            document.querySelector('.no-more-comps-s').style.display = 'none';
+                            document.querySelector('.no-more-comps').style.display = 'none';
                         } else {
-                            document.querySelector('.no-more-comps-s').style.display = 'block';
+                            document.querySelector('.no-more-comps').style.display = 'block';
                             document.querySelector('.no-results').style.display = 'none';
                         }
 
                         search_done_loading = true;
-                        document.querySelector('.loading-container-s').style.display = 'none';
+                        document.querySelector('.loading-container').style.display = 'none';
                     }
                 })
                 .catch(error => {
