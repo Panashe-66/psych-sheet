@@ -33,8 +33,8 @@ async def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
     is_single = event in ['333bf', '444bf', '555bf', '333mbf']
 
-    connector = aiohttp.TCPConnector(limit=20)
-    semaphore = asyncio.Semaphore(20)
+    connector = aiohttp.TCPConnector(limit=100)
+    semaphore = asyncio.Semaphore(50)
 
     async def get_avg(session, wca_id):
         results = await get_json_async(session, f'{API}/persons/{wca_id}/results')
