@@ -6,6 +6,8 @@ from json_request import get_json, get_json_async
 from operator import itemgetter
 from statistics import mean
 
+#Search Competititors
+
 API = 'https://api.worldcubeassociation.org'
 
 EVENT_SETTINGS_DATA = [
@@ -54,7 +56,7 @@ async def get_psych_sheet(competitors, event, solves):
                     if avg > 0:
                         time_list.append(avg)
 
-        time_list = time_list[::-1][:solves]
+        time_list = time_list[-solves:]
 
         if not time_list:
             return []
@@ -78,7 +80,7 @@ async def get_psych_sheet(competitors, event, solves):
                 return (avg, name) if avg is not None else None
 
     async with aiohttp.ClientSession(connector=connector) as session:
-        tasks = [process_competitor(session, c) for c in competitors]
+        tasks = [asyncio.create_task(process_competitor(session, c)) for c in competitors]
         results = list(filter(None, await asyncio.gather(*tasks)))
 
     results.sort(reverse=(event == '333mbf'))
