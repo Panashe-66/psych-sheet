@@ -1,6 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="../static/header.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
     <header class="header">
@@ -53,6 +61,10 @@
     </main>
 
     <script>
+        twemoji.parse(document.body, {
+            folder: 'svg',
+            ext: '.svg'
+        });
         function toggle_logout() {
             const logout = document.querySelector('.logout');
             
@@ -88,3 +100,4 @@
         window.addEventListener('load', update_header_height);
     </script>
 </body>
+</html>

@@ -1,335 +1,321 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
-        <meta charset="UTF-8">
-        <title>{{ short_name }}</title>
-        <link rel="stylesheet" href="../static/psych.css">
-    </head>        
-    <body>
-        {% extends "base.html" %}
+{% extends "base.html" %}
 
-        {% block content %}
-        <h1 class="title">{{ comp_name }}</h1>
+{% block head %}
+    <title>{{ short_name }}</title>
+    <link rel="stylesheet" href="../static/psych.css">
+{% endblock %}
 
-        <button id="settings-button" class="settings-button">
-            <img src="../static/Icons/calculator.svg" class="settings-icon">
-        </button>
+{% block content %}
+<h1 class="title">{{ comp_name }}</h1>
 
+<button id="settings-button" class="settings-button">
+    <img src="../static/Icons/calculator.svg" class="settings-icon">
+</button>
 
-        <form method="post">
-            <div class="events-container">
-                {% for event in events %}
-                    <button type="button" name="enter" class="event-button"
-                        onclick="psych_sheet('{{ event }}')">
-                        <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon" draggable="false"/>
-                    </button>
+<form method="post">
+    <div class="events-container">
+        {% for event in events %}
+            <button type="button" name="enter" class="event-button"
+                onclick="psych_sheet('{{ event }}')">
+                <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon" draggable="false"/>
+            </button>
+        {% endfor %}
+    </div>
+</form>
+
+<button onclick='scroll_to_user({{ session.get("name") | tojson }})' class="show-user">Find Me</button>
+
+<div class="header-hider"></div>
+
+<div class="skeleton-psych">
+    <table>
+        <thead>
+            <tr>
+                <th class="table-header">Seed</th>
+                <th>Name</th>
+                <th>Seed Result</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+            {% for competitor in competitors %}
+                <tr>
+                    <td><div class="skeleton skeleton-psych-seed"></div></td>
+                    <td><div class="skeleton skeleton-psych-name"></div></td>
+                    <td><div class="skeleton skeleton-psych-avg"></div></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="psych-sheet"></div>
+
+<h2 class="select-event">Select An Event</h2>
+
+<div class="settings-container" id="settings-container">
+    <div class="settings">
+        <button type="button" class="settings-close" id="settings-close"></button>
+        <h1 class="settings-header">Adjust Seed Calculation</h1>
+        <p>
+            The seed result is calculated based on a competitor's mean over their last X averages, or singles for blind events. (DNF results are not included) You can adjust this number here to modify the seed calculation for each event.
+        </p>
+            <div class="event-settings">
+                {% for event, event_name, event_value in all_events %}
+                    <div>
+                    <p class="settings-event-label">{{ event_name }}</p>
+                    <input class="solves" id="solves-{{ event }}"
+                            autocomplete="off"
+                            inputmode="numeric"
+                            name="solves-{{ event }}" 
+                            type="number"
+                            value='{{ event_value }}'
+                            max="250" 
+                            min="3"
+                            oninput="this.value = Math.round(this.value);"
+                            onblur="if (this.value > 200) this.value = 200; if (this.value < 3) this.value = 3;">
+                    {% if event in ['333bf', '444bf', '555bf', '333mbf'] %}
+                        <p class="settings-single">(By Single)</p>
+                    {% endif %}
+                    </div>
                 {% endfor %}
             </div>
-        </form>
+            <button onclick="reset_settings()" class="reset">Reset Values</button>
+    </div>
+</div>
 
-        <button onclick='scroll_to_user({{ session.get("name") | tojson }})' class="show-user">Find Me</button>
+<button onclick="window.scrollTo({ top:0, behavior: 'smooth' });" class="scroll-top" id="scroll-top">
+    <img src="../static/Icons/up-arrow.svg" class="up-arrow" draggable="false">
+    Scroll to Top
+</button>
 
-        <div class="header-hider"></div>
 
-        <div class="skeleton-psych">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="table-header">Seed</th>
-                        <th>Name</th>
-                        <th>Seed Result</th>
-                    </tr>
-                </thead>
-                <tbody>
-                
-                    {% for competitor in competitors %}
-                        <tr>
-                            <td><div class="skeleton skeleton-psych-seed"></div></td>
-                            <td><div class="skeleton skeleton-psych-name"></div></td>
-                            <td><div class="skeleton skeleton-psych-avg"></div></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<script>
+    const body = document.body;
+    let latestFetchId = 0;
+
+    let scroll_timeout;
+    let last_scroll = window.scrollY;
+    let scroll_top_hover = false;
+
+    function psych_sheet(event) {
+        currentEvent = event;
         
-        <div class="psych-sheet"></div>
+        const fetchId = ++latestFetchId;
 
-        <h2 class="select-event">Select An Event</h2>
+        const event_buttons = Array.from(document.querySelectorAll('.event-button'));
+        const clicked_button = event_buttons.find(button => button.getAttribute('onclick').includes(event));
+
+        const psych_div = document.querySelector('.psych-sheet');
+        psych_div.style.display = 'none';
+        document.querySelector('.show-user').style.display = 'none';
+
+        
+        document.querySelector('.skeleton-psych').style.display = 'inline-block';
+        document.querySelector('.select-event').style.display = 'none';
+
+        const solves_input = document.querySelector(`input[name='solves-${event}']`);
+
+        currentSolves = solves_input.value;
+
+
+        fetch("/psych_sheet/{{ comp_id }}", {
+            method: "POST",
+            body: new URLSearchParams({
+                'event': event,
+                'solves': solves_input.value
+            }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (fetchId !== latestFetchId) return;                
+
+            if (Array.isArray(data)) {
+                const table = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Seed</th>
+                                <th>Name</th>
+                                <th>Seed Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        ${data.map(p => `
+                            <tr>
+                                <td class="psych-seed">${p[0]}</td>
+                                <td class="psych-name">${p[1]}</td>
+                                <td class="psych-avg">${p[2]}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                `;
+
+                if (psych_div) {
+                    psych_div.innerHTML = table;
+                    psych_div.style.display = 'inline-block';
+                    document.querySelector('.skeleton-psych').style.display = 'none';
+
+                    const name = {{ session.get("name") | tojson }};
+                    const no_space = psych_div.innerText.replace(/\s+/g, ' ').trim();
+
+                    if (name && no_space.includes(name.trim())) {
+                        document.querySelector('.show-user').style.display = 'block';
+                    } else {
+                        document.querySelector('.show-user').style.display = 'none';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            psych_sheet(currentEvent)
+        });
+        
+        event_buttons.forEach(button => {
+            button.classList.remove('event-button-selected');
+            const icon = button.querySelector('.event-icon');
+            if (icon) {
+                icon.classList.remove('event-icon-selected');
+            }
+        });
     
-        <div class="settings-container" id="settings-container">
-            <div class="settings">
-                <button type="button" class="settings-close" id="settings-close"></button>
-                <h1 class="settings-header">Adjust Seed Calculation</h1>
-                <p>
-                    The seed result is calculated based on a competitor's mean over their last X averages, or singles for blind events. (DNF results are not included) You can adjust this number here to modify the seed calculation for each event.
-                </p>
-                    <div class="event-settings">
-                        {% for event, event_name, event_value in all_events %}
-                            <div>
-                            <p class="settings-event-label">{{ event_name }}</p>
-                            <input class="solves" id="solves-{{ event }}"
-                                    autocomplete="off"
-                                    inputmode="numeric"
-                                    name="solves-{{ event }}" 
-                                    type="number"
-                                    value='{{ event_value }}'
-                                    max="250" 
-                                    min="3"
-                                    oninput="this.value = Math.round(this.value);"
-                                    onblur="if (this.value > 200) this.value = 200; if (this.value < 3) this.value = 3;">
-                            {% if event in ['333bf', '444bf', '555bf', '333mbf'] %}
-                                <p class="settings-single">(By Single)</p>
-                            {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <button onclick="reset_settings()" class="reset">Reset Values</button>
-            </div>
-        </div>
+        if (clicked_button) {
+            clicked_button.classList.add('event-button-selected');
+            const icon = clicked_button.querySelector('.event-icon');
+            if (icon) {
+                icon.classList.add('event-icon-selected');
+            }
+        }
+    }
 
-        <button onclick="window.scrollTo({ top:0, behavior: 'smooth' });" class="scroll-top" id="scroll-top">
-            <img src="../static/Icons/up-arrow.svg" class="up-arrow" draggable="false">
-            Scroll to Top
-        </button>
+    const settings_open = document.getElementById('settings-button');
+    const settings_container = document.getElementById('settings-container');
+    const settings_close = document.getElementById('settings-close');
+    const settings_modal = document.querySelector('.settings');
+
+    const show_settings = () => {
+        settings_container.classList.add('settings-show');
+        body.classList.add('no-scroll')
+    };
+
+    const hide_settings = () => {
+        settings_container.classList.remove('settings-show');
+        body.classList.remove('no-scroll')
+    };
+
+    settings_modal.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    settings_open.addEventListener('click', show_settings);
+    settings_close.addEventListener('click', hide_settings);
+    settings_container.addEventListener('click', hide_settings);
+
+    function scroll_to_user(name) {
+        let rows = document.querySelectorAll('table tr');
+        document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
+
+        for (let row of rows) {
+            let name_cell = row.querySelector('td:nth-child(2)');
+            if (name_cell && name_cell.textContent.trim() === name.trim()) {
+                row.scrollIntoView({ block: 'center', behavior: "smooth" });
+                row.classList.add('user-row');
+                break;
+            }
+        }
+    }
+
+    
+    function save_event_value(event, value) {
+        document.cookie = `${event}=${value}; path=/`;
+    }
+
+    function get_event_value(event) {
+        const cookies = document.cookie.split('; ');
+        for (let cookie of cookies) {
+            let [key, val] = cookie.split('=');
+            if (key === event) {
+                return val;
+            }
+        }
+        return null;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.solves').forEach(input => {
+            const event = input.name.replace('solves-', '');
+            const savedValue = get_event_value(event);
+            if (savedValue) {
+                input.value = savedValue;
+            }
+
+            input.addEventListener("input", function() {
+                save_event_value(event, this.value);
+            });
+
+            input.addEventListener("blur", function() {
+                save_event_value(event, this.value);
+            });
+        });
+    });
+
+    function reset_settings() {
+        document.querySelectorAll('.solves').forEach(input => {
+            const event = input.name.replace('solves-', '');
+            input.value = input.getAttribute('value');
+            save_event_value(event, input.value);
+        });
+    }
+
+    var close = document.getElementsByClassName("alert-close");
+
+    close.onclick = function(){
+        var div = this.parentElement;
+
+        div.style.opacity = "0";
+
+        setTimeout(function(){ div.style.display = "none"; }, 600);
+    }
 
 
-        <script>
-            document.querySelector('.psych-sheet').style.display = 'none';
-            document.querySelector('.skeleton-psych').style.display = 'none';
-            document.querySelector('.show-user').style.display = 'none';
+    const scroll_top = document.getElementById('scroll-top');
 
-            const body = document.body;
-            let latestFetchId = 0;
+    scroll_top.addEventListener('mouseenter', () => {
+        scroll_top_hover = true;
+        clearTimeout(scroll_timeout);
+    });
 
-            let scroll_timeout;
-            let last_scroll = window.scrollY;
-            let scroll_top_hover = false;
+    scroll_top.addEventListener('mouseleave', () => {
+        scroll_top_hover = false;
 
-            function psych_sheet(event) {
-                currentEvent = event;
-                
-                const fetchId = ++latestFetchId;
+        scroll_timeout = setTimeout(() => {
+            if (window.scrollY > 750 && window.scrollY === last_scroll && !scroll_top_hover) {
+                scroll_top.classList.remove('show');
+            }
+        }, 2500);
+    });
 
-                const event_buttons = Array.from(document.querySelectorAll('.event-button'));
-                const clicked_button = event_buttons.find(button => button.getAttribute('onclick').includes(event));
+    window.addEventListener('scroll', function () {
+        const scroll_top = document.getElementById('scroll-top');
 
-                const psych_div = document.querySelector('.psych-sheet');
-                psych_div.style.display = 'none';
-                document.querySelector('.show-user').style.display = 'none';
+        if (window.scrollY > 750) {
+            scroll_top.classList.add('show');
 
-                
-                document.querySelector('.skeleton-psych').style.display = 'inline-block';
-                document.querySelector('.select-event').style.display = 'none';
-
-                const solves_input = document.querySelector(`input[name='solves-${event}']`);
-
-                currentSolves = solves_input.value;
-
-        
-                fetch("/psych_sheet/{{ comp_id }}", {
-                    method: "POST",
-                    body: new URLSearchParams({
-                        'event': event,
-                        'solves': solves_input.value
-                    }),
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (fetchId !== latestFetchId) return;                
-
-                    if (Array.isArray(data)) {
-                        const table = `
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Seed</th>
-                                        <th>Name</th>
-                                        <th>Seed Result</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                ${data.map(p => `
-                                    <tr>
-                                        <td class="psych-seed">${p[0]}</td>
-                                        <td class="psych-name">${p[1]}</td>
-                                        <td class="psych-avg">${p[2]}</td>
-                                    </tr>`).join('')}
-                                </tbody>
-                            </table>
-                        `;
-        
-                        if (psych_div) {
-                            psych_div.innerHTML = table;
-                            psych_div.style.display = 'inline-block';
-                            document.querySelector('.skeleton-psych').style.display = 'none';
-
-                            const name = {{ session.get("name") | tojson }};
-                            const no_space = psych_div.innerText.replace(/\s+/g, ' ').trim();
-
-                            if (name && no_space.includes(name.trim())) {
-                                document.querySelector('.show-user').style.display = 'block';
-                            } else {
-                                document.querySelector('.show-user').style.display = 'none';
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    psych_sheet(currentEvent)
-                });
-                
-                event_buttons.forEach(button => {
-                    button.classList.remove('event-button-selected');
-                    const icon = button.querySelector('.event-icon');
-                    if (icon) {
-                        icon.classList.remove('event-icon-selected');
-                    }
-                });
+            clearTimeout(scroll_timeout);
             
-                if (clicked_button) {
-                    clicked_button.classList.add('event-button-selected');
-                    const icon = clicked_button.querySelector('.event-icon');
-                    if (icon) {
-                        icon.classList.add('event-icon-selected');
-                    }
-                }
-            }
-
-            const settings_open = document.getElementById('settings-button');
-            const settings_container = document.getElementById('settings-container');
-            const settings_close = document.getElementById('settings-close');
-            const settings_modal = document.querySelector('.settings');
-
-            const show_settings = () => {
-                settings_container.classList.add('settings-show');
-                body.classList.add('no-scroll')
-            };
-
-            const hide_settings = () => {
-                settings_container.classList.remove('settings-show');
-                body.classList.remove('no-scroll')
-            };
-
-            settings_modal.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
-
-            settings_open.addEventListener('click', show_settings);
-            settings_close.addEventListener('click', hide_settings);
-            settings_container.addEventListener('click', hide_settings);
-
-            function scroll_to_user(name) {
-                let rows = document.querySelectorAll('table tr');
-                document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
-
-                for (let row of rows) {
-                    let name_cell = row.querySelector('td:nth-child(2)');
-                    if (name_cell && name_cell.textContent.trim() === name.trim()) {
-                        row.scrollIntoView({ block: 'center', behavior: "smooth" });
-                        row.classList.add('user-row');
-                        break;
-                    }
-                }
-            }
-
-            
-            function save_event_value(event, value) {
-                document.cookie = `${event}=${value}; path=/`;
-            }
-
-            function get_event_value(event) {
-                const cookies = document.cookie.split('; ');
-                for (let cookie of cookies) {
-                    let [key, val] = cookie.split('=');
-                    if (key === event) {
-                        return val;
-                    }
-                }
-                return null;
-            }
-
-            document.addEventListener("DOMContentLoaded", function() {
-                document.querySelectorAll('.solves').forEach(input => {
-                    const event = input.name.replace('solves-', '');
-                    const savedValue = get_event_value(event);
-                    if (savedValue) {
-                        input.value = savedValue;
-                    }
-
-                    input.addEventListener("input", function() {
-                        save_event_value(event, this.value);
-                    });
-
-                    input.addEventListener("blur", function() {
-                        save_event_value(event, this.value);
-                    });
-                });
-            });
-
-            function reset_settings() {
-                document.querySelectorAll('.solves').forEach(input => {
-                    const event = input.name.replace('solves-', '');
-                    input.value = input.getAttribute('value');
-                    save_event_value(event, input.value);
-                });
-            }
-
-            var close = document.getElementsByClassName("alert-close");
-
-            close.onclick = function(){
-                var div = this.parentElement;
-
-                div.style.opacity = "0";
-
-                setTimeout(function(){ div.style.display = "none"; }, 600);
-            }
-
-
-            const scroll_top = document.getElementById('scroll-top');
-
-            scroll_top.addEventListener('mouseenter', () => {
-                scroll_top_hover = true;
-                clearTimeout(scroll_timeout);
-            });
-
-            scroll_top.addEventListener('mouseleave', () => {
-                scroll_top_hover = false;
-
-                scroll_timeout = setTimeout(() => {
-                    if (window.scrollY > 750 && window.scrollY === last_scroll && !scroll_top_hover) {
-                        scroll_top.classList.remove('show');
-                    }
-                }, 2500);
-            });
-
-            window.addEventListener('scroll', function () {
-                const scroll_top = document.getElementById('scroll-top');
-
-                if (window.scrollY > 750) {
-                    scroll_top.classList.add('show');
-
-                    clearTimeout(scroll_timeout);
-                    
-                    scroll_timeout = setTimeout(() => {
-                        if (window.scrollY === last_scroll && !scroll_top_hover) {
-                            scroll_top.classList.remove('show');
-                        }
-                    }, 2500);
-                } else {
+            scroll_timeout = setTimeout(() => {
+                if (window.scrollY === last_scroll && !scroll_top_hover) {
                     scroll_top.classList.remove('show');
-                    clearTimeout(scroll_timeout);
                 }
-                
-                last_scroll = window.scrollY;
-            });
-        </script>
+            }, 2500);
+        } else {
+            scroll_top.classList.remove('show');
+            clearTimeout(scroll_timeout);
+        }
+        
+        last_scroll = window.scrollY;
+    });
+</script>
 
-
-        {% endblock %}
-    </body>
-</html>
+{% endblock %}

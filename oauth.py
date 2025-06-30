@@ -15,15 +15,12 @@ def get_token(code):
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code",
     }
-
-    response = requests.post(TOKEN_URL, data=data)
-    
-    if response.status_code != 200:
+    try:
+        response = requests.post(TOKEN_URL, data=data)
+        response.raise_for_status()
+        return loads(response.content).get("access_token")
+    except Exception:
         return
-    
-    access_token = loads(response.content).get("access_token")
-
-    return access_token
     
 def get_user_info(token, info, avatar=False):
     user_data = get_json(f'https://api.worldcubeassociation.org/me?access_token={token}')
@@ -32,13 +29,14 @@ def get_user_info(token, info, avatar=False):
         return
     
     user_data = user_data.get('me')
+    if not user_data:
+        return
 
     if avatar:
         pfp = user_data.get('avatar', {}).get(info)
 
-        if 'missing_avatar_thumb' in pfp:
+        if not pfp or 'missing_avatar_thumb' in pfp:
             return 'no pfp'
-        
         return pfp
-    else:
-        return user_data.get(info)
+
+    return user_data.get(info)

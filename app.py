@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify, Response, session, redirect, url_for, render_template as html
-from secrets import token_urlsafe as secret_key
 from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, EVENT_SETTINGS_DATA
 from oauth import get_token, get_user_info
-from cache import get_cache, save_cache, extend_cache
+from cache import get_cache
+import asyncio
 
 
 app = Flask(__name__)
-app.secret_key = '123abcpspsych'
+app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU'
 
 
 #--Oauth--
@@ -50,7 +50,8 @@ def home():
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
     if request.method == "POST":
-        return jsonify(get_comps('search', 25, request.form['page'], search=request.form['search']))
+        comps = get_comps('search', 25, request.form['page'], search=request.form['search'])
+        return jsonify(comps)
     
     logged_in = session.get('logged_in', False)
 
@@ -74,7 +75,7 @@ def psych_sheet(comp):
         solves = int(request.form["solves"])
         event = request.form.get('event')
 
-        psych_sheet = get_psych_sheet(competitors, event, solves)
+        psych_sheet = asyncio.run(get_psych_sheet(competitors, event, solves))
 
         return jsonify(psych_sheet)
 
@@ -99,4 +100,4 @@ def psych_sheet(comp):
 
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(port=8000)
