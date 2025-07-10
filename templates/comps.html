@@ -74,11 +74,19 @@
 
     var search_done_loading = false;
 
+    let controller = null;
     
     function search(page) {
         if (search_done_loading) {
             return;
         }
+
+        if (controller) {
+            controller.abort();
+        }
+
+        controller = new AbortController();
+
 
         search_done_loading = true;
 
@@ -109,7 +117,8 @@
             body: new URLSearchParams({
                 'search': query,
                 'page': page
-            })
+            }),
+            signal: controller.signal
         })
         .then(res => res.json())           
         .then(data => {
@@ -162,6 +171,10 @@
             }
         })
         .catch(error => {
+            if (error.name === 'AbortError') {
+                return;
+            }
+            
             search(page)
         });
     }

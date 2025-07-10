@@ -92,16 +92,18 @@
 
 <script>
     const body = document.body;
-    let latestFetchId = 0;
+    let controller = null;
 
     let scroll_timeout;
     let last_scroll = window.scrollY;
     let scroll_top_hover = false;
 
     function psych_sheet(event) {
-        currentEvent = event;
-        
-        const fetchId = ++latestFetchId;
+        if (controller) {
+            controller.abort();
+        }
+
+        controller = new AbortController();
 
         const event_buttons = Array.from(document.querySelectorAll('.event-button'));
         const clicked_button = event_buttons.find(button => button.getAttribute('onclick').includes(event));
@@ -125,12 +127,11 @@
                 'event': event,
                 'solves': solves_input.value
             }),
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            signal: controller.signal
         })
         .then(res => res.json())
-        .then(data => {
-            if (fetchId !== latestFetchId) return;                
-
+        .then(data => { 
             if (Array.isArray(data)) {
                 const table = `
                     <table>
@@ -169,7 +170,11 @@
             }
         })
         .catch(error => {
-            psych_sheet(currentEvent)
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            psych_sheet(event)
         });
         
         event_buttons.forEach(button => {

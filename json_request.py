@@ -1,6 +1,7 @@
 from requests import Session
 from orjson import loads
 import aiohttp
+from asyncio import Semaphore
 
 session = Session()
 
@@ -20,3 +21,9 @@ async def get_json_async(session, url):
             return loads(content)
     except Exception:
         return 'error'
+
+def async_semaphore():
+    return Semaphore(60)
+
+def async_connector():
+    return aiohttp.TCPConnector(limit=60)

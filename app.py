@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Response, session, redirect, url_for, render_template as html
-from psych import get_psych_sheet, get_comps, get_comp_info, get_competitors, EVENT_SETTINGS_DATA
+from psych import get_psych_sheet, get_comps, get_comp_data, EVENT_SETTINGS_DATA
 from oauth import get_token, get_user_info
 from cache import get_cache
 import asyncio
@@ -69,19 +69,21 @@ def comps():
 
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
 def psych_sheet(comp):
-    if request.method == "POST":
-        competitors = get_cache(f'{comp} competitors', lambda: get_competitors(comp), 600)
+    comp_data = get_cache(f'{comp} data', lambda: get_comp_data(comp), 600)
+    competitors = comp_data["competitors"]
 
+    if request.method == "POST":
         solves = int(request.form["solves"])
         event = request.form.get('event')
 
         psych_sheet = asyncio.run(get_psych_sheet(competitors, event, solves))
-
         return jsonify(psych_sheet)
 
-    competitors = get_cache(f'{comp} competitors', lambda: get_competitors(comp), 600)
+    name = comp_data["name"]
+    short_name = comp_data["short_name"]
+    events = comp_data["event_ids"]
 
-    name, short_name, events = get_comp_info(comp)
+    has_regged_competitors = True if competitors else False
 
     breadcrumbs = zip(
         ['Home', 'Psych Sheet', short_name],
@@ -95,7 +97,8 @@ def psych_sheet(comp):
                             comp_id=comp, comp_name=name,
                             competitors=range(len(competitors)),
                             breadcrumbs=breadcrumbs,
-                            short_name=short_name
+                            short_name=short_name,
+                            regged=has_regged_competitors
                         )
 
 

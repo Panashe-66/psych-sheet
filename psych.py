@@ -2,29 +2,36 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import aiohttp
 import asyncio
-from json_request import get_json, get_json_async
-from operator import itemgetter
-from statistics import mean
+from json_request import get_json, get_json_async, async_connector, async_semaphore
+from math import ceil
+from itertools import islice, chain
+from collections import deque
+
 
 #Search Competititors
+#Next Round
+#CSV
+
+#Comp doesnt exist / No regged ppl
+#Clean up files
 
 API = 'https://api.worldcubeassociation.org'
 
 EVENT_SETTINGS_DATA = [
-    ('333', '3x3', 10),
-    ('222', '2x2', 9),
-    ('444', '4x4', 5),
-    ('555', '5x5', 4),
-    ('666', '6x6', 3),
-    ('777', '7x7', 3),
+    ('333', '3x3', 50),
+    ('222', '2x2', 45),
+    ('444', '4x4', 25),
+    ('555', '5x5', 20),
+    ('666', '6x6', 15),
+    ('777', '7x7', 15),
     ('333bf', '3x3 Blindfolded', 12),
-    ('333fm', '3x3 Fewest Moves', 3),
-    ('333oh', '3x3 One-Handed', 4),
-    ('clock', 'Clock', 4),
-    ('minx', 'Megaminx', 4),
-    ('pyram', 'Pyraminx', 6),
-    ('skewb', 'Skewb', 6),
-    ('sq1', 'Square-1', 4),
+    ('333fm', '3x3 Fewest Moves', 9),
+    ('333oh', '3x3 One-Handed', 20),
+    ('clock', 'Clock', 20),
+    ('minx', 'Megaminx', 20),
+    ('pyram', 'Pyraminx', 30),
+    ('skewb', 'Skewb', 30),
+    ('sq1', 'Square-1', 20),
     ('444bf', '4x4 Blindfolded', 6),
     ('555bf', '5x5 Blindfolded', 6),
     ('333mbf', '3x3 Multi-Blind', 6)
@@ -33,49 +40,42 @@ EVENT_SETTINGS_DATA = [
 
 async def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
-    is_single = event in ['333bf', '444bf', '555bf', '333mbf']
 
-    connector = aiohttp.TCPConnector(limit=100)
-    semaphore = asyncio.Semaphore(50)
+    connector = async_connector()
+    semaphore = async_semaphore()
 
     async def get_avg(session, wca_id):
-        results = await get_json_async(session, f'{API}/persons/{wca_id}/results')
+        results = await get_json_async(session, f'{API}/persons/{wca_id}/results?event_id={event}')
 
         if results == 'error':
-            return []
+            return
         
-        time_list = []
-
-        for result in results:
-            if result["event_id"] == event:
-
-                if is_single:
-                    time_list += [a for a in result.get('attempts', []) if a > 0]
-                else:
-                    avg = result.get('average', 0)
-                    if avg > 0:
-                        time_list.append(avg)
-
-        time_list = time_list[-solves:]
+        attempts_gen = (a for result in results for a in result.get('attempts', []) if a > 0)
+        time_list = list(deque(attempts_gen, maxlen=solves))
+    
 
         if not time_list:
-            return []
+            return
 
         if event == '333mbf':
             mbld_encoded = [int(str(result)[:2]) for result in time_list]
             time_list = [99 - result for result in mbld_encoded]
-        else:
+        elif event != '333fm':
             time_list = [a / 100 for a in time_list]
 
-        return round(mean(time_list), 2)
+        if len(time_list) > 3:
+            trim = ceil(len(time_list) * 0.05)
+            time_list = sorted(time_list)[trim:-trim]
+
+        return round((sum(time_list) / len(time_list)), 2) if time_list else None
 
     async def process_competitor(session, competitor):
         async with semaphore:
             wca_id = competitor.get("wcaId")
             name = competitor.get("name")
-            events = (competitor.get("registration") or {}).get("eventIds", [])
+            events = competitor.get("eventIds")
             
-            if wca_id and event in events:
+            if event in events:
                 avg = await get_avg(session, wca_id)
                 return (avg, name) if avg is not None else None
 
@@ -85,24 +85,26 @@ async def get_psych_sheet(competitors, event, solves):
 
     results.sort(reverse=(event == '333mbf'))
     
-    if event == '333mbf':
-        results = [(f'{avg:.2f} Pts', name) for avg, name in results]
-    elif event == '333fm':
-        results = [(f'{avg:.2f}', name) for avg, name in results]
-    else:
-        def sec_to_hms(sec):
-            hours, remainder = divmod(sec, 3600)
-            min, sec = divmod(remainder, 60)
-            sec = round(sec, 2)
+    def sec_to_hms(sec):
+        hours, remainder = divmod(sec, 3600)
+        min, sec = divmod(remainder, 60)
+        sec = round(sec, 2)
 
-            if hours:
-                return f"{int(hours)}:{int(min):02}:{sec:05.2f}" #HH:MM:SS.ss
-            if min:
-                return f"{int(min)}:{sec:05.2f}" #MM:SS.ss
-            
-            return f"{sec:.2f}" if sec < 10 else f"{sec:05.2f}" #SS.ss
+        if hours:
+            return f"{int(hours)}:{int(min):02}:{sec:05.2f}" #HH:MM:SS.ss
+        if min:
+            return f"{int(min)}:{sec:05.2f}" #MM:SS.ss
         
-        results = [(sec_to_hms(avg), name) for avg, name in results]
+        return f"{sec:.2f}" if sec < 10 else f"{sec:05.2f}" #SS.ss
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        if event == '333mbf':
+            results = [(f'{avg:.2f} Pts', name) for avg, name in results]
+        elif event == '333fm':
+            results = [(f'{avg:.2f}', name) for avg, name in results]
+        else:
+            results = list(executor.map(lambda t: (sec_to_hms(t[0]), t[1]), results))
+
 
     prev_rank, prev_avg = 0, None
 
@@ -125,8 +127,8 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
         if comps == 'error':
             return []
         
-        upcoming = sorted(comps.get("upcoming_competitions", []), key=itemgetter("start_date"))
-        ongoing = sorted(comps.get("ongoing_competitions", []), key=itemgetter("start_date"))
+        upcoming = sorted(comps.get("upcoming_competitions", []), key=lambda c: c["start_date"])
+        ongoing = sorted(comps.get("ongoing_competitions", []), key=lambda c: c["start_date"])
         comps = ongoing + upcoming
 
         if not comps:
@@ -180,29 +182,30 @@ def get_comps(when, per_page=25, page=1, user_id=None, search=None):
 
     return comps
 
-def get_comp_info(comp_id):
-    comp = get_json(f'{API}/competitions/{comp_id}')
+def get_comp_data(comp_id):
+    comp = get_json(f'{API}/competitions/{comp_id}/wcif/public')
 
     if comp == 'error':
-        return []
-
-    return [comp['name'], comp['short_name'], comp['event_ids']]
-
-def get_competitors(comp_id):
-    data = get_json(f'{API}/competitions/{comp_id}/wcif/public')
-    
-    if data == 'error':
-        return []
-
-    return [
-        {
-            "wcaId": c["wcaId"],
-            "name": c["name"],
-            "registration": c["registration"]
+        return {
+            "name": "",
+            "short_name": "",
+            "event_ids": [],
+            "competitors": []
         }
-        for c in data.get("persons", [])
-        if (reg := c.get("registration")) and
-            c.get("wcaId") and
-            reg.get("isCompeting") and
-            reg.get("status") == 'accepted'
-    ]
+    
+
+    return {
+        "name": comp["name"],
+        "short_name": comp["shortName"],
+        "event_ids": [event['id'] for event in comp['events']],
+        "competitors": [
+            {
+                "wcaId": c["wcaId"],
+                "name": c["name"],
+                "eventIds": (c.get("registration") or {}).get("eventIds", [])
+            }
+            for c in comp.get("persons", [])
+            if c.get("wcaId") and (c.get("registration") or {}).get("isCompeting")
+        ]
+    }
+
