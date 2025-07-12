@@ -24,7 +24,7 @@ def auth():
             session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
             session['user_id'] = get_user_info(access_token, 'id')
             session['name'] = get_user_info(access_token, 'name')
-            session['wca_id'] = get_user_info(access_token, 'wcaId')
+            session['wca_id'] = get_user_info(access_token, 'wca_id')
 
         return redirect(url or url_for('home'))
 
@@ -37,6 +37,7 @@ def deauth():
     session.pop('pfp', None)
     session.pop('user_id', None)
     session.pop('name', None)
+    session.pop('wca_id', None)
 
     return redirect(url or url_for('home'))
 
