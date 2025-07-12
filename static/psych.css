@@ -18,9 +18,10 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .event-icon {
-    filter: invert(75%);
     width: clamp(1.875rem, 1.75rem + 0.625vw, 2.5rem);
     pointer-events: none;
+    user-select: none;
+    filter: invert(75%);
 }
 
 .event-button {
@@ -41,6 +42,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .event-icon-selected {
     filter: invert(17%);
+    user-select: none;
 }
 
 .event-button:hover {
@@ -381,6 +383,7 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 50px;
     vertical-align: middle;
     filter: invert(100%);
+    user-select: none;
 }
 
 .settings-close {
@@ -390,6 +393,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='black'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
     border: none;
     filter: invert(1) grayscale(100%) brightness(200%);
+    user-select: none;
     opacity: 0.5;
     cursor: pointer;
 }
@@ -591,6 +595,7 @@ img.emoji {
 
     .up-arrow {
         filter: brightness(0) saturate(100%);
+        user-select: none;
     }
 }
 
@@ -733,4 +738,8 @@ img.emoji {
 
 .comp-details-div {
     display: flex;
+}
+
+.psych-main {
+    display: none;
 }

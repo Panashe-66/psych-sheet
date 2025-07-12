@@ -4,39 +4,22 @@ import aiohttp
 import asyncio
 from json_request import get_json, get_json_async, async_connector, async_semaphore
 from math import ceil
-from itertools import islice, chain
 from collections import deque
-
 
 #Search Competititors
 #Next Round
 #CSV
+#Merge pages
 
+#Ledger compter thing
 #Comp doesnt exist / No regged ppl
 #Clean up files
+#Solves UI
+#Oauth dint reload
+#Error
+#WCA FIND ME
 
 API = 'https://api.worldcubeassociation.org'
-
-EVENT_SETTINGS_DATA = [
-    ('333', '3x3', 50),
-    ('222', '2x2', 45),
-    ('444', '4x4', 25),
-    ('555', '5x5', 20),
-    ('666', '6x6', 15),
-    ('777', '7x7', 15),
-    ('333bf', '3x3 Blindfolded', 12),
-    ('333fm', '3x3 Fewest Moves', 9),
-    ('333oh', '3x3 One-Handed', 20),
-    ('clock', 'Clock', 20),
-    ('minx', 'Megaminx', 20),
-    ('pyram', 'Pyraminx', 30),
-    ('skewb', 'Skewb', 30),
-    ('sq1', 'Square-1', 20),
-    ('444bf', '4x4 Blindfolded', 6),
-    ('555bf', '5x5 Blindfolded', 6),
-    ('333mbf', '3x3 Multi-Blind', 6)
-]
-
 
 async def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
@@ -53,7 +36,6 @@ async def get_psych_sheet(competitors, event, solves):
         attempts_gen = (a for result in results for a in result.get('attempts', []) if a > 0)
         time_list = list(deque(attempts_gen, maxlen=solves))
     
-
         if not time_list:
             return
 
@@ -77,7 +59,7 @@ async def get_psych_sheet(competitors, event, solves):
             
             if event in events:
                 avg = await get_avg(session, wca_id)
-                return (avg, name) if avg is not None else None
+                return (avg, name, wca_id) if avg is not None else None
 
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = [asyncio.create_task(process_competitor(session, c)) for c in competitors]
@@ -99,20 +81,20 @@ async def get_psych_sheet(competitors, event, solves):
     
     with ThreadPoolExecutor(max_workers=10) as executor:
         if event == '333mbf':
-            results = [(f'{avg:.2f} Pts', name) for avg, name in results]
+            results = [(f'{avg:.2f} Pts', name, wca_id) for avg, name, wca_id in results]
         elif event == '333fm':
-            results = [(f'{avg:.2f}', name) for avg, name in results]
+            results = [(f'{avg:.2f}', name, wca_id) for avg, name, wca_id in results]
         else:
-            results = list(executor.map(lambda t: (sec_to_hms(t[0]), t[1]), results))
+            results = list(executor.map(lambda t: (sec_to_hms(t[0]), t[1], t[2]), results))
 
 
     prev_rank, prev_avg = 0, None
 
-    for rank, (avg, name) in enumerate(results, start=1):
+    for rank, (avg, name, wca_id) in enumerate(results, start=1):
         if avg == prev_avg:
-            psych_sheet.append([prev_rank, name, avg])
+            psych_sheet.append([prev_rank, name, avg, wca_id])
         else:
-            psych_sheet.append([rank, name, avg])
+            psych_sheet.append([rank, name, avg, wca_id])
             prev_rank, prev_avg = rank, avg
             
     return psych_sheet
@@ -208,4 +190,3 @@ def get_comp_data(comp_id):
             if c.get("wcaId") and (c.get("registration") or {}).get("isCompeting")
         ]
     }
-

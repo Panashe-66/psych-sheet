@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify, Response, session, redirect, url_for, render_template as html
-from psych import get_psych_sheet, get_comps, get_comp_data, EVENT_SETTINGS_DATA
+from flask import Flask, request, jsonify, session, redirect, url_for, render_template as html
+from psych import get_psych_sheet, get_comps, get_comp_data
 from oauth import get_token, get_user_info
 from cache import get_cache
 import asyncio
@@ -24,6 +24,7 @@ def auth():
             session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
             session['user_id'] = get_user_info(access_token, 'id')
             session['name'] = get_user_info(access_token, 'name')
+            session['wca_id'] = get_user_info(access_token, 'wcaId')
 
         return redirect(url or url_for('home'))
 
@@ -52,10 +53,8 @@ def comps():
     if request.method == "POST":
         comps = get_comps('search', 25, request.form['page'], search=request.form['search'])
         return jsonify(comps)
-    
-    logged_in = session.get('logged_in', False)
 
-    if logged_in:
+    if session.get('logged_in', False):
         your_comps = get_comps('user', user_id=session.get('user_id'))
     else:
         your_comps = None
@@ -91,16 +90,13 @@ def psych_sheet(comp):
     )
 
     return html('psych.html',
-                            psych_sheet=None,
-                            events=events,
-                            all_events=EVENT_SETTINGS_DATA,
-                            comp_id=comp, comp_name=name,
-                            competitors=range(len(competitors)),
-                            breadcrumbs=breadcrumbs,
-                            short_name=short_name,
-                            regged=has_regged_competitors
-                        )
-
+                events=events,
+                comp_id=comp, comp_name=name,
+                competitors=range(len(competitors)),
+                breadcrumbs=breadcrumbs,
+                short_name=short_name,
+                regged=has_regged_competitors
+                )
 
 if __name__ == "__main__":
     app.run(port=8000)
