@@ -166,7 +166,7 @@
         document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
 
         for (let row of rows) {
-            if (row.dataset.wcaid === wcaid.trim()) {
+            if (row.dataset.wcaid === wcaId.trim()) {
                 row.scrollIntoView({ block: 'center', behavior: "smooth" });
                 row.classList.add('user-row');
                 break;
