@@ -62,7 +62,7 @@
 <script>
     let controller = null;
 
-    const session_name = {{ session.get("name") | tojson }};
+    const user_wcaid = {{ session.get("wca_id") | tojson }};
 
     const psych_div = document.querySelector('.psych-sheet');
     const show_user_btn = document.querySelector('.show-user');
@@ -95,7 +95,7 @@
         psych_div.style.display = 'inline-block';
         skeleton.style.display = 'none';
 
-        if (session_name && psych_div.innerText.includes(session_name.trim())) {
+        if (user_wcaid && Array.from(psych_div.querySelectorAll('tr[data-wcaid]')).some(row => row.dataset.wcaid === user_wcaid)) {
             show_user_btn.style.display = 'block';
         } else {
             show_user_btn.style.display = 'none';
