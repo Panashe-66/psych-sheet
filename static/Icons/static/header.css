@@ -1,0 +1,214 @@
+@import url("base.css");
+
+:root {
+    --header-top: 0px;
+}
+
+.pfp {
+    display: block;
+    border-radius: 50%;
+    width: 41px;
+    height: 41px;
+    object-fit: cover;
+    cursor: pointer;
+    aspect-ratio: 1 / 1;
+
+    @media (max-width: 1024px) {
+        width: 40px;
+        height: 40px;
+    }
+
+    @media (max-width: 768px) {
+        height: 38px;
+        width: 38px;
+    }
+
+    @media (max-width: 425px) {
+        height: 37.5px;
+        width: 37.5px;
+    }
+}
+
+.pfp:hover {
+    opacity: 0.8;
+} 
+
+.pfp,
+.login-a {
+    margin-left: auto;
+    margin-right: 20px;
+    height: fit-content;
+
+    @media (max-width: 1024px) {
+        margin: 0 19px;
+    }
+
+    @media (max-width: 768px) {
+        margin: 0 17px;
+    }
+
+    @media (max-width: 425px) {
+        margin: 0 16.5px;
+    }
+}
+
+.login-button,
+.logout-button {
+    color: var(--primary);
+    font-weight: 600;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    margin: 0;
+    cursor: pointer;
+}
+
+header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 45px;
+    min-height: fit-content;
+    width: 100%;
+    background-color: var(--bg);
+    box-shadow: 0 5px 5px rgba(100, 100, 100, 0.1);
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1;
+    padding: 9px 0;
+
+    @media (max-width: 1024px) {
+        height: 42px;
+        padding: 8.5px 0;
+    }
+
+    @media (max-width: 768px) {
+        height: 37px;
+        padding: 8px 0;
+    }
+
+    @media (max-width: 450px) {
+        height: 34px;
+        padding: 8px 0;
+    }
+}
+
+.logout-button {
+    position: absolute;
+    top: 65px;
+    right: 20px;
+    background-color: var(--bg);
+    box-shadow: 0 5px 5px rgba(100, 100, 100, 0.1);
+    padding: 8px 13px;
+    border-radius: 7px;
+    font-size: 14.5px;
+    z-index: 2;
+
+    @media (max-width: 1024px) {
+        font-size: 14.5px;
+        top: 62px;
+    }
+
+    @media (max-width: 768px) {
+       font-size: 14px;
+       top: 57px;
+    }
+}
+
+.logout-button:hover {
+    background-color: #232b31;
+}
+
+.spinner {
+    border: 5px solid var(--primary);
+    border-top: 5px solid #fff;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    right: 0;
+    margin-right: 20px;
+    aspect-ratio: 1 / 1;
+
+    @media (max-width: 1024px) {
+        border-width: 4.8px;
+        width: 30.4px;
+        height: 30.4px;
+        margin-right: 19px;
+    }
+
+    @media (max-width: 768px) {
+        width: 29px;
+        height: 29px;
+        border-width: 4.5px;
+        margin-right: 17px;
+    }
+
+    @media (max-width: 425px) {
+        width: 28.5px;
+        height: 28.5px;
+        border-width: 4.5px;
+        margin-right: 16.5px;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.breadcrumbs {
+    margin: 0 20px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+
+    @media (max-width: 1024px) {
+        margin: 0 19px;
+    }
+
+    @media (max-width: 768px) {
+        margin: 0 17px;
+    }
+}
+
+.breadcrumb {
+    display: inline-block;
+}
+
+.breadcrumb-link {
+    color: var(--primary);
+    font-weight: bold;
+    justify-content: center;
+}
+
+.breadcrumb-link,
+.login-button,
+.slash {
+    font-size: clamp(0.8125rem, 0.735969387755102rem + 0.27210884353741494vw, 1.0625rem);
+}
+
+.breadcrumb-last {
+    color: var(--secondary);
+    cursor: pointer;
+}
+
+.slash {
+    margin: 0 4px;
+}
+
+.logout,
+.spinner {
+    display: none;
+}
+
+.home {
+    height: clamp(0.8125rem, 0.735969387755102rem + 0.27210884353741494vw, 1.0625rem);
+    position: relative;
+    top: 2px;
+}

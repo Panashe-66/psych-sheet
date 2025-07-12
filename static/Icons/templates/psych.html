@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>{{ short_name }}</title>
+    <link rel="stylesheet" href="../static/psych.css">
+{% endblock %}
+
+{% block content %}
+<h1 class="title">{{ comp_name }}</h1>
+
+<div class="events-container">
+    {% for event in events %}
+        <button type="button" name="enter" class="event-button" data-event="{{ event }}">
+            <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon" draggable="false" loading="eager"/>
+        </button>
+    {% endfor %}
+</div>
+
+<button onclick='scroll_to_user({{ session.get("wca_id") | tojson }})' class="show-user">Find Me</button>
+
+<div class="header-hider"></div>
+
+<div class="skeleton-psych">
+    <table>
+        <thead>
+            <tr>
+                <th>Seed</th>
+                <th>Name</th>
+                <th>Seed Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for competitor in competitors %}
+                <tr>
+                    <td><div class="skeleton skeleton-psych-seed"></div></td>
+                    <td><div class="skeleton skeleton-psych-name"></div></td>
+                    <td><div class="skeleton skeleton-psych-avg"></div></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="psych-sheet"></div>
+
+<h2 class="select-event">Select An Event</h2>
+
+<!-- <p>
+    The seed result is calculated based on the competitor's most recent average of X solves (DNFs not included.) You can adjust this number here to modify the seed calculation for each event.
+</p> -->
+<input class="solves" id="solves"
+        autocomplete="off"
+        inputmode="numeric"
+        name="solves" 
+        type="number"
+        value='25'
+        max="500" 
+        min="3"
+        oninput="this.value = Math.round(this.value);"
+        onblur="if (this.value > 500) this.value = 500; if (this.value < 3) this.value = 3;">
+
+<script>
+    let controller = null;
+
+    const session_name = {{ session.get("name") | tojson }};
+
+    const psych_div = document.querySelector('.psych-sheet');
+    const show_user_btn = document.querySelector('.show-user');
+    const skeleton = document.querySelector('.skeleton-psych');
+    const select_event = document.querySelector('.select-event');
+
+    const psychSheetCache = {};
+
+    function renderPsychSheet(data) {
+        const table = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Seed</th>
+                        <th>Name</th>
+                        <th>Seed Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                ${data.map(p => `
+                    <tr data-wcaid='${p[3]}'>
+                        <td class="psych-seed">${p[0]}</td>
+                        <td class="psych-name">${p[1]}</td>
+                        <td class="psych-avg">${p[2]}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        `;
+        psych_div.innerHTML = table;
+        psych_div.style.display = 'inline-block';
+        skeleton.style.display = 'none';
+
+        if (session_name && psych_div.innerText.includes(session_name.trim())) {
+            show_user_btn.style.display = 'block';
+        } else {
+            show_user_btn.style.display = 'none';
+        }
+    }
+
+    function updateEventButtons(clickedButton) {
+        document.querySelectorAll('.event-button').forEach(button => {
+            button.classList.remove('event-button-selected');
+            const icon = button.querySelector('.event-icon');
+            if (icon) icon.classList.remove('event-icon-selected');
+        });
+
+        clickedButton.classList.add('event-button-selected');
+        const icon = clickedButton.querySelector('.event-icon');
+        if (icon) icon.classList.add('event-icon-selected');
+    }
+
+
+    async function psych_sheet(event, clicked_button) {
+        if (controller) controller.abort();
+        controller = new AbortController();
+
+        psych_div.style.display = 'none';
+        show_user_btn.style.display = 'none';
+        skeleton.style.display = 'inline-block';
+        select_event.style.display = 'none';
+
+        updateEventButtons(clicked_button);
+
+        const solves = document.querySelector(`input[name='solves']`).value;
+        const cacheKey = `${event}|${solves}`;
+
+        if (psychSheetCache[cacheKey]) {
+            renderPsychSheet(psychSheetCache[cacheKey]);
+            return;
+        }
+
+        try {
+            const response = await fetch("/psych_sheet/{{ comp_id }}", {
+                method: "POST",
+                body: new URLSearchParams({
+                    'event': event,
+                    'solves': document.querySelector(`input[name='solves']`).value
+                }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                signal: controller.signal
+            });
+
+            const data = await response.json();
+            if (!Array.isArray(data)) return;
+
+            psychSheetCache[cacheKey] = data;
+
+            renderPsychSheet(data);
+
+        } catch(error) {
+            if (error.name !== 'AbortError') {
+                setTimeout(() => psych_sheet(event), 500);
+            }
+        };
+    }
+
+    function scroll_to_user(wcaId) {
+        if (!wcaId) return; 
+
+        let rows = document.querySelectorAll('table tr');
+        document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
+
+        for (let row of rows) {
+            if (row.dataset.wcaid === wcaid.trim()) {
+                row.scrollIntoView({ block: 'center', behavior: "smooth" });
+                row.classList.add('user-row');
+                break;
+            }
+        }
+    }
+
+    function save_solves_value(value) {
+        document.cookie = `solves=${value}; path=/`;
+    }
+
+    function get_solves_value() {
+        const cookies = document.cookie.split('; ');
+        for (let cookie of cookies) {
+            let [key, val] = cookie.split('=');
+            if (key === 'solves') {
+                return val;
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const eventButtons = document.querySelectorAll('.event-button');
+        eventButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const event = button.getAttribute('data-event');
+                psych_sheet(event, button);
+            });
+        });
+
+        const input = document.querySelector('.solves');
+
+        const savedValue = get_solves_value();
+        if (savedValue) {
+            input.value = savedValue;
+        }
+
+        input.addEventListener("input", function() {
+            save_solves_value(this.value);
+        });
+
+        input.addEventListener("blur", function() {
+            save_solves_value(this.value);
+        });
+    });
+</script>
+
+{% endblock %}
