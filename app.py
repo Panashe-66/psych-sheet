@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify, session, redirect, url_for, render_template as html
-from psych import get_psych_sheet, get_comps, get_comp_data
+from flask import Flask, request, jsonify, session, redirect, url_for, render_template as html, Response
+from psych import get_psych_sheet, get_comps, get_comp_data, download_csv
 from oauth import get_token, get_user_info
 from cache import get_cache
 import asyncio
-
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU'
@@ -12,8 +12,8 @@ app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU'
 #--Oauth--
 @app.route('/auth')
 def auth():
-    code = request.args.get('code')
-    url = request.args.get('state')
+    code = request.args['code']
+    url = request.args['state']
 
     if code:
         access_token = get_token(code)
@@ -26,11 +26,11 @@ def auth():
             session['name'] = get_user_info(access_token, 'name')
             session['wca_id'] = get_user_info(access_token, 'wca_id')
 
-        return redirect(url or url_for('home'))
+        return redirect(url + "#logged_in")
 
 @app.route('/deauth')
 def deauth():
-    url = request.args.get('url', url_for('home'))
+    url = request.args['url']
 
     session.pop('access_token', None)
     session.pop('logged_in', None)
@@ -39,7 +39,7 @@ def deauth():
     session.pop('name', None)
     session.pop('wca_id', None)
 
-    return redirect(url or url_for('home'))
+    return redirect(url)
 
 #--Home-
 
@@ -52,8 +52,13 @@ def home():
 @app.route("/psych_sheet/", methods=["GET", "POST"])
 def comps():
     if request.method == "POST":
-        comps = get_comps('search', 25, request.form['page'], search=request.form['search'])
+        if 'utc_now' not in session:
+            session['utc_now'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        
+        comps = get_comps('search', now=session['utc_now'], page=request.form['page'], search=request.form['search'])
         return jsonify(comps)
+
+    session.pop('utc_now', None)
 
     if session.get('logged_in', False):
         your_comps = get_comps('user', user_id=session.get('user_id'))
@@ -70,18 +75,33 @@ def comps():
 @app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
 def psych_sheet(comp):
     comp_data = get_cache(f'{comp} data', lambda: get_comp_data(comp), 600)
-    competitors = comp_data["competitors"]
+    competitors = comp_data.get("competitors", {})
+
+    print(comp_data)
 
     if request.method == "POST":
-        solves = int(request.form["solves"])
-        event = request.form.get('event')
+        if request.form['action'] == 'psych_sheet':
+            solves = int(request.form["solves"])
+            event = request.form.get('event')
 
-        psych_sheet = asyncio.run(get_psych_sheet(competitors, event, solves))
-        return jsonify(psych_sheet)
+            psych_sheet = asyncio.run(get_psych_sheet(competitors, event, solves))
+            return jsonify(psych_sheet)
+        elif request.form['action'] == 'csv':
+            psych_sheet = request.form['psych_sheet']
+            csv = download_csv(psych_sheet)
 
-    name = comp_data["name"]
-    short_name = comp_data["short_name"]
-    events = comp_data["event_ids"]
+            event = request.form['event']
+            solves = request.form['solves']
+
+            return Response(
+                csv.getvalue(),
+                mimetype="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={comp}_{event}_Ao{solves}.csv"}
+            )
+
+    name = comp_data.get("name", '')
+    short_name = comp_data.get("short_name", '')
+    events = comp_data.get("event_ids", [])
 
     has_regged_competitors = True if competitors else False
 
@@ -100,4 +120,4 @@ def psych_sheet(comp):
                 )
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=8000, debug=True)

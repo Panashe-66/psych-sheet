@@ -6,7 +6,6 @@
 }
 
 
-
 main {
     margin-top: 35px;
 
@@ -89,4 +88,10 @@ h2 {
     font-size: clamp(1.3125rem, 1.2375rem + 0.375vw, 1.6875rem);
     margin: 20px 18px;
     text-align: center;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }

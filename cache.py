@@ -5,6 +5,9 @@ caches = {}
 cache_lock = Lock()
 
 def save_cache(name, value, expiration=600):
+    if not value:
+        return
+    
     expiry_time = now() + expiration
 
     with cache_lock:

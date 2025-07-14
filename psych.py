@@ -1,23 +1,20 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 import aiohttp
 import asyncio
 from json_request import get_json, get_json_async, async_connector, async_semaphore
 from math import ceil
 from collections import deque
+import csv
+from io import StringIO, BytesIO
+from orjson import loads
 
-#Search Competititors
 #Next Round
-#CSV
-#Merge pages
 
+#weird loading bug
 #Ledger compter thing
 #Comp doesnt exist / No regged ppl
-#Clean up files
-#Solves UI
-#Oauth dint reload
-#Error
-#WCA FIND ME
+#Oauth dont reload
+#Search combo thing
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -99,8 +96,7 @@ async def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, per_page=25, page=1, user_id=None, search=None):
-    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
     today = now[:10]
     
     if when == 'user':
@@ -168,14 +164,8 @@ def get_comp_data(comp_id):
     comp = get_json(f'{API}/competitions/{comp_id}/wcif/public')
 
     if comp == 'error':
-        return {
-            "name": "",
-            "short_name": "",
-            "event_ids": [],
-            "competitors": []
-        }
+        return {}
     
-
     return {
         "name": comp["name"],
         "short_name": comp["shortName"],
@@ -190,3 +180,11 @@ def get_comp_data(comp_id):
             if c.get("wcaId") and (c.get("registration") or {}).get("isCompeting")
         ]
     }
+
+def download_csv(psych_sheet):
+    psych_sheet = loads(psych_sheet)
+    output = StringIO()
+    csv.writer(output).writerows([["Seed", "Name", "Seed Result"]] + [row[:3] for row in psych_sheet])
+    csv_file = BytesIO(output.getvalue().encode('utf-8'))
+
+    return csv_file
