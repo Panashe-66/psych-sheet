@@ -98,7 +98,7 @@ async def get_psych_sheet(competitors, event, solves):
 
 def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
     if now == None:
-        datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
     today = now[:10]
     
     if when == 'user':
