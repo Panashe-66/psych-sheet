@@ -7,6 +7,7 @@ from collections import deque
 import csv
 from io import StringIO, BytesIO
 from orjson import loads
+from datetime import datetime, timezone
 
 #Next Round
 
@@ -96,6 +97,8 @@ async def get_psych_sheet(competitors, event, solves):
     return psych_sheet
 
 def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
+    if now == None:
+        datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
     today = now[:10]
     
     if when == 'user':
