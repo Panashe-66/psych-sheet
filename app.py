@@ -26,7 +26,7 @@ def auth():
             session['name'] = get_user_info(access_token, 'name')
             session['wca_id'] = get_user_info(access_token, 'wca_id')
 
-        return redirect(url + "#logged_in")
+        return redirect(url)
 
 @app.route('/deauth')
 def deauth():
@@ -76,8 +76,6 @@ def comps():
 def psych_sheet(comp):
     comp_data = get_cache(f'{comp} data', lambda: get_comp_data(comp), 600)
     competitors = comp_data.get("competitors", {})
-
-    print(comp_data)
 
     if request.method == "POST":
         if request.form['action'] == 'psych_sheet':

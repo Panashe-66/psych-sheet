@@ -75,21 +75,20 @@ header {
     align-items: center;
     justify-content: space-between;
     z-index: 100;
-    padding: 9px 0;
+    padding: 15px 0;
 
     @media (max-width: 1024px) {
         height: 42px;
-        padding: 8.5px 0;
+        padding: 12px 0;
     }
 
     @media (max-width: 768px) {
         height: 37px;
-        padding: 8px 0;
+        padding: 10px 0;
     }
 
     @media (max-width: 450px) {
         height: 34px;
-        padding: 8px 0;
     }
 }
 

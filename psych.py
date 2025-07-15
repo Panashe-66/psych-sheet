@@ -13,7 +13,6 @@ from orjson import loads
 #weird loading bug
 #Ledger compter thing
 #Comp doesnt exist / No regged ppl
-#Oauth dont reload
 #Search combo thing
 
 API = 'https://api.worldcubeassociation.org'
