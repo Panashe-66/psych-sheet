@@ -2,19 +2,22 @@ from concurrent.futures import ThreadPoolExecutor
 import aiohttp
 import asyncio
 from json_request import get_json, get_json_async, async_connector, async_semaphore
-from math import ceil
-from collections import deque
 import csv
 from io import StringIO, BytesIO
 from orjson import loads
-from datetime import datetime, timezone
+from math import ceil
 
-#Next Round
-
-#weird loading bug
 #Ledger compter thing
-#Comp doesnt exist / No regged ppl
+#Comp doesnt exist / No regged ppl / Private comp
 #Search combo thing
+#header padding
+#session cookie login
+#Phase reg
+#Variables, functions names
+#semi-colons
+#Error thing for not enough competitors
+#Function  returrrnss nothing
+
 
 API = 'https://api.worldcubeassociation.org'
 
@@ -30,23 +33,22 @@ async def get_psych_sheet(competitors, event, solves):
         if results == 'error':
             return
         
-        attempts_gen = (a for result in results for a in result.get('attempts', []) if a > 0)
-        time_list = list(deque(attempts_gen, maxlen=solves))
+        time_list = [a for result in results for a in result.get('attempts', []) if a > 0][-solves:]
     
         if not time_list:
             return
-
+        
         if event == '333mbf':
             mbld_encoded = [int(str(result)[:2]) for result in time_list]
             time_list = [99 - result for result in mbld_encoded]
-        elif event != '333fm':
-            time_list = [a / 100 for a in time_list]
 
         if len(time_list) > 3:
             trim = ceil(len(time_list) * 0.05)
             time_list = sorted(time_list)[trim:-trim]
 
-        return round((sum(time_list) / len(time_list)), 2) if time_list else None
+        avg = round(sum(time_list) / len(time_list) / (100 if event not in ['333mbf', '333fm'] else 1), 2)
+
+        return avg if time_list else None
 
     async def process_competitor(session, competitor):
         async with semaphore:
@@ -56,6 +58,7 @@ async def get_psych_sheet(competitors, event, solves):
             
             if event in events:
                 avg = await get_avg(session, wca_id)
+
                 return (avg, name, wca_id) if avg is not None else None
 
     async with aiohttp.ClientSession(connector=connector) as session:
@@ -82,8 +85,7 @@ async def get_psych_sheet(competitors, event, solves):
         elif event == '333fm':
             results = [(f'{avg:.2f}', name, wca_id) for avg, name, wca_id in results]
         else:
-            results = list(executor.map(lambda t: (sec_to_hms(t[0]), t[1], t[2]), results))
-
+            results = list(executor.map(lambda t: (sec_to_hms(t[0]) if t[0] > 60 else f"{t[0]:.2f}", t[1], t[2]), results))
 
     prev_rank, prev_avg = 0, None
 
@@ -96,11 +98,7 @@ async def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
-    if now == None:
-        now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-    today = now[:10]
-    
+def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):    
     if when == 'user':
         comps = get_json(f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false')
 
@@ -115,6 +113,8 @@ def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
             return 'No Comps User'
 
     elif when == 'search':
+        today = now[:10]
+
         comps = get_json(f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false")
 
         if comps == 'error':
@@ -180,7 +180,15 @@ def get_comp_data(comp_id):
             }
             for c in comp.get("persons", [])
             if c.get("wcaId") and (c.get("registration") or {}).get("isCompeting")
-        ]
+        ],
+        "advancement_conditions": {
+            event['id']: [
+                round['advancementCondition']
+                for round in event['rounds']
+                if round['advancementCondition']
+            ]
+            for event in comp['events']
+        }
     }
 
 def download_csv(psych_sheet):

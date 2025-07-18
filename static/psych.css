@@ -660,3 +660,7 @@ tbody tr.hide {
 .csv {
     display: none;
 }
+
+.round-button {
+    display: none;
+}

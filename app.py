@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 app = Flask(__name__)
 app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU'
 
-
 #--Oauth--
 @app.route('/auth')
 def auth():
@@ -19,12 +18,7 @@ def auth():
         access_token = get_token(code)
 
         if access_token:
-            session['access_token'] = access_token
-            session['logged_in'] = True
-            session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
-            session['user_id'] = get_user_info(access_token, 'id')
-            session['name'] = get_user_info(access_token, 'name')
-            session['wca_id'] = get_user_info(access_token, 'wca_id')
+            session['user_data'] = get_user_info(access_token)
 
         return redirect(url)
 
@@ -32,12 +26,7 @@ def auth():
 def deauth():
     url = request.args['url']
 
-    session.pop('access_token', None)
-    session.pop('logged_in', None)
-    session.pop('pfp', None)
-    session.pop('user_id', None)
-    session.pop('name', None)
-    session.pop('wca_id', None)
+    session.pop('user_data', None)
 
     return redirect(url)
 
@@ -49,7 +38,7 @@ def home():
 
 #--Psych Sheet-
 
-@app.route("/psych_sheet/", methods=["GET", "POST"])
+@app.route('/psych_sheet/', methods=['GET', 'POST'])
 def comps():
     if request.method == "POST":
         if 'utc_now' not in session:
@@ -60,8 +49,8 @@ def comps():
 
     session.pop('utc_now', None)
 
-    if session.get('logged_in', False):
-        your_comps = get_comps('user', user_id=session.get('user_id'))
+    if session.get('user_data', None):
+        your_comps = get_comps('user', user_id=session['user_data']['user_id'])
     else:
         your_comps = None
 
@@ -72,7 +61,7 @@ def comps():
 
     return html('comps.html', your_comps=your_comps, breadcrumbs=breadcrumbs)
 
-@app.route("/psych_sheet/<comp>", methods=["GET", "POST"])
+@app.route('/psych_sheet/<comp>', methods=['GET', 'POST'])
 def psych_sheet(comp):
     comp_data = get_cache(f'{comp} data', lambda: get_comp_data(comp), 600)
     competitors = comp_data.get("competitors", {})
@@ -80,7 +69,7 @@ def psych_sheet(comp):
     if request.method == "POST":
         if request.form['action'] == 'psych_sheet':
             solves = int(request.form["solves"])
-            event = request.form.get('event')
+            event = request.form['event']
 
             psych_sheet = asyncio.run(get_psych_sheet(competitors, event, solves))
             return jsonify(psych_sheet)
@@ -100,6 +89,7 @@ def psych_sheet(comp):
     name = comp_data.get("name", '')
     short_name = comp_data.get("short_name", '')
     events = comp_data.get("event_ids", [])
+    advancement_conditions = comp_data.get("advancement_conditions", {})
 
     has_regged_competitors = True if competitors else False
 
@@ -114,8 +104,9 @@ def psych_sheet(comp):
                 competitors=range(len(competitors)),
                 breadcrumbs=breadcrumbs,
                 short_name=short_name,
+                advancement_conditions=advancement_conditions,
                 regged=has_regged_competitors
-                )
+    )
 
 if __name__ == "__main__":
     app.run(port=8000, debug=True)

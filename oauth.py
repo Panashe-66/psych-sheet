@@ -22,7 +22,7 @@ def get_token(code):
     except Exception:
         return
     
-def get_user_info(token, info, avatar=False):
+def get_user_info(token):
     user_data = get_json(f'https://api.worldcubeassociation.org/me?access_token={token}')
 
     if user_data == 'error':
@@ -31,12 +31,21 @@ def get_user_info(token, info, avatar=False):
     user_data = user_data.get('me')
     if not user_data:
         return
+    
+    '''session['access_token'] = access_token
+    session['logged_in'] = True
+    session['pfp'] = get_user_info(access_token, 'thumb_url', avatar=True)
+    session['user_id'] = get_user_info(access_token, 'id')
+    session['name'] = get_user_info(access_token, 'name')
+    session['wca_id'] = get_user_info(access_token, 'wca_id')'''
 
-    if avatar:
-        pfp = user_data.get('avatar', {}).get(info)
+    pfp = user_data['avatar']['thumb_url']
 
-        if not pfp or 'missing_avatar_thumb' in pfp:
-            return 'no pfp'
-        return pfp
+    if not pfp or 'missing_avatar_thumb' in pfp:
+        pfp = 'no pfp'
 
-    return user_data.get(info)
+    return {
+        "pfp": pfp,
+        "user_id": user_data['id'],
+        "wca_id": user_data['wca_id']
+    }

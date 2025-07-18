@@ -74,10 +74,18 @@
 
 <button onclick="download_csv()" id="csv" class="csv">Download CSV</button>
 
+<button onclick="viewRound('second')" class="round-button" id="second-round">Second Round</button>
+<button onclick="viewRound('semi')" class="round-button" id="semi-round">Semi Final</button>
+<button onclick="viewRound('final')" class="round-button" id="final-round">Final</button>
+
+
 <script>
     let controller = null;
 
     const user_wcaid = {{ session.get("wca_id") | tojson }};
+
+    const advancement_conditions = {{ advancement_conditions | tojson }};
+    let advancements = [];
 
     const psych_div = document.querySelector('.psych-sheet');
     const show_user_btn = document.querySelector('.show-user');
@@ -89,59 +97,107 @@
 
     const search = document.querySelector('.search-competitors');
 
+    const secondRoundBtn = document.getElementById('second-round');
+    const semiRoundBtn = document.getElementById('semi-round');
+    const finalRoundBtn = document.getElementById('final-round');
+
     let event = null;
     let solves = 25
 
     const psychSheetCache = {};
 
-    function renderPsychSheet(data) {
-        const table = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Seed</th>
-                        <th>Name</th>
-                        <th>Result</th>
-                    </tr>
-                </thead>
-                <tbody>
-                ${data.map(p => `
-                    <tr data-wcaid='${p[3]}'>
-                        <td class="psych-seed">${p[0]}</td>
-                        <td class="psych-name">${p[1]}</td>
-                        <td class="psych-avg">${p[2]}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>
-        `;
-        psych_div.innerHTML = table;
-        psych_div.style.display = 'inline-block';
-        skeleton.style.display = 'none';
+    function get_advancements(event) {
+        const psych_table = psych_div.querySelector("table");
+        let num_competitors = psych_table?.tBodies[0].rows.length;
+        let advancements = [];
 
-        search_wrapper.style.display = 'block';
-        csv_btn.style.display = 'block';
+        const event_advancements = advancement_conditions[event];
 
-        if (user_wcaid && Array.from(psych_div.querySelectorAll('tr[data-wcaid]')).some(row => row.dataset.wcaid === user_wcaid)) {
-            show_user_btn.style.display = 'block';
-        } else {
-            show_user_btn.style.display = 'none';
+        if (!event_advancements.length) return [];
+
+        for (const round of event_advancements) {
+            if (num_competitors < 8) return [];
+
+            let max_proceed = Math.floor(num_competitors * 0.75);
+            let advance = round.level;
+
+            if (round.type === 'ranking') {
+                advance = Math.min(advance, max_proceed);
+            } else if (round.type === 'percent') {
+                advance = Math.floor(num_competitors * advance / 100);
+            } else {
+                return [];
+            }
+
+            advancements.push(advance);
+            num_competitors = advance;
         }
+
+        return(advancements);
     }
-
-    function updateEventButtons(clickedButton) {
-        document.querySelectorAll('.event-button').forEach(button => {
-            button.classList.remove('event-button-selected');
-            const icon = button.querySelector('.event-icon');
-            if (icon) icon.classList.remove('event-icon-selected');
-        });
-
-        clickedButton.classList.add('event-button-selected');
-        const icon = clickedButton.querySelector('.event-icon');
-        if (icon) icon.classList.add('event-icon-selected');
-    }
-
 
     async function psych_sheet(selectedEvent, clicked_button) {
+        function renderPsychSheet(data) {
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Seed</th>
+                            <th>Name</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    ${data.map(p => `
+                        <tr data-wcaid='${p[3]}'>
+                            <td class="psych-seed">${p[0]}</td>
+                            <td class="psych-name">${p[1]}</td>
+                            <td class="psych-avg">${p[2]}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+            psych_div.innerHTML = table;
+            psych_div.style.display = 'inline-block';
+            skeleton.style.display = 'none';
+
+            search_wrapper.style.display = 'block';
+            csv_btn.style.display = 'block';
+
+            if (user_wcaid && Array.from(psych_div.querySelectorAll('tr[data-wcaid]')).some(row => row.dataset.wcaid === user_wcaid)) {
+                show_user_btn.style.display = 'block';
+            } else {
+                show_user_btn.style.display = 'none';
+            }
+
+            advancements = get_advancements(event);
+
+            if (advancements.length === 3) {
+                secondRoundBtn.style.display = 'block';
+                semiRoundBtn.style.display = 'block';
+                finalRoundBtn.style.display = 'block';
+            } else if (advancements.length === 2) {
+                secondRoundBtn.style.display = 'block';
+                finalRoundBtn.style.display = 'block';
+            } else if (advancements.length === 1) {
+                finalRoundBtn.style.display = 'block';
+            }
+        }
+
+
+        function updateEventButtons(clickedButton) {
+            document.querySelectorAll('.event-button').forEach(button => {
+                button.classList.remove('event-button-selected');
+                const icon = button.querySelector('.event-icon');
+                if (icon) icon.classList.remove('event-icon-selected');
+            });
+
+            clickedButton.classList.add('event-button-selected');
+            const icon = clickedButton.querySelector('.event-icon');
+            if (icon) icon.classList.add('event-icon-selected');
+        }
+
+
         if (controller) controller.abort();
         controller = new AbortController();
 
@@ -149,7 +205,9 @@
         show_user_btn.style.display = 'none';
         search_wrapper.style.display = 'none';
         csv_btn.style.display = 'none';
-
+        secondRoundBtn.style.display = 'none';
+        semiRoundBtn.style.display = 'none';
+        finalRoundBtn.style.display = 'none';
         skeleton.style.display = 'inline-block';
         select_event.style.display = 'none';
 
@@ -183,9 +241,6 @@
             psychSheetCache[cacheKey] = data;
 
             renderPsychSheet(data);
-
-            psych_div.dataset.solves = solves;
-
         } catch(error) {
             if (error.name !== 'AbortError') {
                 setTimeout(() => psych_sheet(event), 500);
@@ -196,7 +251,7 @@
     function scroll_to_user(wcaId) {
         if (!wcaId) return; 
 
-        let rows = document.querySelectorAll('table tr');
+        let rows = document.querySelectorAll('.psych-sheet tbody tr');
         document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
 
         for (let row of rows) {
@@ -204,20 +259,6 @@
                 row.scrollIntoView({ block: 'center', behavior: "smooth" });
                 row.classList.add('user-row');
                 break;
-            }
-        }
-    }
-
-    function save_solves_value(value) {
-        document.cookie = `solves=${value}; path=/`;
-    }
-
-    function get_solves_value() {
-        const cookies = document.cookie.split('; ');
-        for (let cookie of cookies) {
-            let [key, val] = cookie.split('=');
-            if (key === 'solves') {
-                return val;
             }
         }
     }
@@ -258,17 +299,17 @@
 
         const input = document.querySelector('.solves');
 
-        const savedValue = get_solves_value();
+        const savedValue = localStorage.getItem('solves');
         if (savedValue) {
             input.value = savedValue;
         }
 
         input.addEventListener("input", function() {
-            save_solves_value(this.value);
+            localStorage.setItem('solves', this.value);
         });
 
         input.addEventListener("blur", function() {
-            save_solves_value(this.value);
+            localStorage.setItem('solves', this.value);
         });
 
 
@@ -316,8 +357,8 @@
             if (match) {
                 visible.push(row);
 
-                if (query === ''){
-                    row.style.backgroundColor = (visible.length % 2 === 1) ? 'var(--bg)' : '#11161A';
+                if (query === '') {
+                    row.style.backgroundColor = '';
                 } else {
                     row.style.backgroundColor = (visible.length % 2 === 1) ? '#11161A' : 'var(--bg)';
                 }
@@ -358,6 +399,30 @@
             el.classList.remove("search-sticky");
         }
     });
+
+    function viewRound(round) {
+        if (!advancements.length) return;
+
+        const rows = document.querySelectorAll('.psych-sheet tbody tr');
+        rows.forEach(row => row.classList.remove('user-row'));
+
+        const indexMap = { second: 0, semi: 1, final: -1 };
+        const roundIndex = indexMap[round];
+
+        const advancement = advancements.at(roundIndex);
+        let lastValidRow = null;
+
+        for (const row of rows) {
+            const seed = parseInt(row.querySelector('.psych-seed')?.textContent);
+            if (seed <= advancement) {
+                targetRow = row;
+            }
+        }
+
+        void targetRow.offsetWidth;
+        targetRow.classList.add('user-row');
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
 </script>
 
