@@ -1,29 +1,29 @@
 from flask import Flask, request, jsonify, session, redirect, url_for, render_template as html, Response
 from psych import get_psych_sheet, get_comps, get_comp_data, download_csv
-from oauth import get_token, get_user_info
+from oauth import get_access_token, get_user_data
 from cache import get_cache
 import asyncio
 from datetime import datetime, timezone
 
 app = Flask(__name__)
-app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU'
+app.secret_key = 'vgMKTGYE5rUDUzVAY517TsaJcNSoM57iVHKwwKBjCiU' #Remove Later
 
 #--Oauth--
-@app.route('/auth')
-def auth():
+@app.route('/oauth')
+def oauth():
     code = request.args['code']
     url = request.args['state']
 
     if code:
-        access_token = get_token(code)
+        access_token = get_access_token(code)
 
         if access_token:
-            session['user_data'] = get_user_info(access_token)
+            session['user_data'] = get_user_data(access_token)
 
         return redirect(url)
 
-@app.route('/deauth')
-def deauth():
+@app.route('/logout')
+def logout():
     url = request.args['url']
 
     session.pop('user_data', None)
@@ -39,7 +39,7 @@ def home():
 #--Psych Sheet-
 
 @app.route('/psych_sheet/', methods=['GET', 'POST'])
-def comps():
+def psych_comps():
     if request.method == "POST":
         if 'utc_now' not in session:
             session['utc_now'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -49,17 +49,14 @@ def comps():
 
     session.pop('utc_now', None)
 
-    if session.get('user_data'):
-        your_comps = get_comps('user', user_id=session['user_data']['user_id'])
-    else:
-        your_comps = None
+    your_comps = get_comps('user', user_id=session['user_data']['user_id']) if session.get('user_data') else None
 
     breadcrumbs = zip(
         ['Home', 'Psych Sheet'],
         [url_for('home'), '']
     )
 
-    return html('comps.html', your_comps=your_comps, breadcrumbs=breadcrumbs)
+    return html('psych_comps.html', your_comps=your_comps, breadcrumbs=breadcrumbs)
 
 @app.route('/psych_sheet/<comp>', methods=['GET', 'POST'])
 def psych_sheet(comp):
@@ -91,22 +88,19 @@ def psych_sheet(comp):
     events = comp_data.get("event_ids", [])
     advancement_conditions = comp_data.get("advancement_conditions", {})
 
-    has_regged_competitors = True if competitors else False
-
     breadcrumbs = zip(
         ['Home', 'Psych Sheet', short_name],
-        [url_for('home'), url_for('comps'), '']
+        [url_for('home'), url_for('psych_comps'), '']
     )
 
-    return html('psych.html',
+    return html('psych_sheet.html',
                 events=events,
                 comp_id=comp, comp_name=name,
                 competitors=range(len(competitors)),
                 breadcrumbs=breadcrumbs,
                 short_name=short_name,
-                advancement_conditions=advancement_conditions,
-                regged=has_regged_competitors
+                advancement_conditions=advancement_conditions
     )
 
 if __name__ == "__main__":
-    app.run(port=8000, debug=True)
+    app.run(debug=True)

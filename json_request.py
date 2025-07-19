@@ -3,6 +3,9 @@ from orjson import loads
 import aiohttp
 from asyncio import Semaphore
 
+SEMAPHORE_LIMIT = 60
+CONNECTOR_LIMIT = 60
+
 session = Session()
 
 def get_json(url):
@@ -23,7 +26,7 @@ async def get_json_async(session, url):
         return 'error'
 
 def async_semaphore():
-    return Semaphore(60)
+    return Semaphore(SEMAPHORE_LIMIT)
 
 def async_connector():
-    return aiohttp.TCPConnector(limit=60)
+    return aiohttp.TCPConnector(limit=CONNECTOR_LIMIT)

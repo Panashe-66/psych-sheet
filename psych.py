@@ -9,17 +9,20 @@ from math import ceil
 
 #Ledger compter thing
 #Comp doesnt exist / No regged ppl / Private comp
-#Search combo thing
-#header padding
-#session cookie login
+#Search combo thing  
 #Phase reg
 #Variables, functions names
-#semi-colons
 #Error thing for not enough competitors
 #Function  returrrnss nothing
-
+#secret key
+#404
+#home paage
+#define elementst in js
+#Clean up html/js/css
 
 API = 'https://api.worldcubeassociation.org'
+COMPS_PER_PAGE = 25
+MAX_WORKERS = 20
 
 async def get_psych_sheet(competitors, event, solves):
     psych_sheet = []
@@ -79,7 +82,7 @@ async def get_psych_sheet(competitors, event, solves):
         
         return f"{sec:.2f}" if sec < 10 else f"{sec:05.2f}" #SS.ss
     
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         if event == '333mbf':
             results = [(f'{avg:.2f} Pts', name, wca_id) for avg, name, wca_id in results]
         elif event == '333fm':
@@ -98,7 +101,7 @@ async def get_psych_sheet(competitors, event, solves):
             
     return psych_sheet
 
-def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):    
+def get_comps(when, now=None, page=1, user_id=None, search=None):    
     if when == 'user':
         comps = get_json(f'{API}/users/{user_id}?upcoming_competitions=true&ongoing_competitions=true&include_cancelled=false')
 
@@ -115,15 +118,17 @@ def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
     elif when == 'search':
         today = now[:10]
 
-        comps = get_json(f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={per_page}&page={page}&q={search}&include_cancelled=false")
+        comps = get_json(f"{API}/competitions?ongoing_and_future={today}&sort=start_date,end_date,name&per_page={COMPS_PER_PAGE}&page={page}&q={search}&include_cancelled=false")
 
         if comps == 'error':
             return []
 
         comps = [c for c in comps if c["registration_open"] <= now]
     
-    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    MONTHS = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ]
     
     def date_range(start, end):
         s_year, s_month, s_date = start[:4], MONTHS[int(start[5:7])-1], start[8:10].lstrip('0')
@@ -157,7 +162,7 @@ def get_comps(when, now=None, per_page=25, page=1, user_id=None, search=None):
             "flag": flag
         }
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         comps = list(executor.map(extract_attributes, comps))
 
     return comps
@@ -198,10 +203,3 @@ def download_csv(psych_sheet):
     csv_file = BytesIO(output.getvalue().encode('utf-8'))
 
     return csv_file
-
-a = {
-    'csp': 'a'
-}
-
-if a.get('csa'):
-    print(a['csa'])

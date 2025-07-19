@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <title>{{ short_name }}</title>
+  <link rel="stylesheet" href="../static/psych.css">
+{% endblock %}
+
+{% block content %}
+<h1 class="title">{{ comp_name }}</h1>
+
+<div class="events-container">
+  {% for event in events %}
+    <button type="button" name="enter" class="event-button" data-event="{{ event }}" >
+      <img src="../static/Icons/Events/{{ event }}.svg" class="event-icon" draggable="false" fetchpriority="high"/>
+    </button>
+  {% endfor %}
+</div>
+
+<button onclick='scroll_to_user()' class="show-user">Find Me</button>
+
+<div class="header-hider"></div>
+
+<div>
+  <div class="skeleton-psych">
+    <table>
+      <thead>
+        <tr>
+          <th>Seed</th>
+          <th>Name</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for competitor in competitors %}
+          <tr>
+            <td><div class="skeleton skeleton-psych-seed"></div></td>
+            <td><div class="skeleton skeleton-psych-name"></div></td>
+            <td><div class="skeleton skeleton-psych-avg"></div></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<div class="search-wrapper">
+  <div class="competitors-search-div">
+    <input type="text" placeholder="Search Competitors" class="search-competitors" autocomplete="off" oninput="searchCompetitors()">
+    <img src="../static/Icons/search.svg" class="search_icon">
+  </div>
+</div>
+
+<div>
+  <div class="psych-sheet"></div>
+</div>
+
+<h2 class="select-event">Select An Event</h2>
+
+<!-- <p>
+    The seed result is calculated based on the competitor's most recent average of X solves (DNFs not included.) You can adjust this number here to modify the seed calculation for each event.
+</p> -->
+<input class="solves" id="solves"
+        autocomplete="off"
+        inputmode="numeric"
+        name="solves" 
+        type="number"
+        value='25'
+        max="500" 
+        min="3"
+        oninput="this.value = Math.round(this.value);"
+        onblur="if (this.value > 500) this.value = 500; if (this.value < 3) this.value = 3;">
+
+<button onclick="download_csv()" id="csv" class="csv">Download CSV</button>
+
+<button onclick="viewRound('second')" class="round-button" id="second-round">Second Round</button>
+<button onclick="viewRound('semi')" class="round-button" id="semi-round">Semi Final</button>
+<button onclick="viewRound('final')" class="round-button" id="final-round">Final</button>
+
+<script>
+  let controller = null;
+
+  const user_wcaid = {{ session.get("user_data", {}).get("wca_id") | tojson }};
+
+  const advancement_conditions = {{ advancement_conditions | tojson }};
+  let advancements = [];
+
+  const psych_div = document.querySelector('.psych-sheet');
+  const show_user_btn = document.querySelector('.show-user');
+  const skeleton = document.querySelector('.skeleton-psych');
+  const select_event = document.querySelector('.select-event');
+
+  const search_wrapper = document.querySelector('.search-wrapper');
+  const csv_btn = document.getElementById('csv');
+
+  const search = document.querySelector('.search-competitors');
+
+  const secondRoundBtn = document.getElementById('second-round');
+  const semiRoundBtn = document.getElementById('semi-round');
+  const finalRoundBtn = document.getElementById('final-round');
+
+  let event = null;
+  let solves = 25
+
+  const psychSheetCache = {};
+
+  function get_advancements(event) {
+    const psych_table = psych_div.querySelector("table");
+    let num_competitors = psych_table?.tBodies[0].rows.length;
+    let advancements = [];
+
+    const event_advancements = advancement_conditions[event];
+
+    if (!event_advancements.length) return [];//
+
+    for (const round of event_advancements) {
+      if (num_competitors < 8) return [];
+
+      let advance = round.level;
+
+      if (round.type === 'ranking') {
+        advance = Math.min(advance, Math.floor(num_competitors * 0.75));
+      } else if (round.type === 'percent') {
+        advance = Math.floor(num_competitors * advance / 100);
+      } else {
+        return [];
+      }
+
+      advancements.push(advance);
+      num_competitors = advance;
+    }
+
+    return(advancements);
+  }
+
+  async function psych_sheet(selectedEvent, clicked_button) {
+    function renderPsychSheet(data) {
+      const table = `
+          <table>
+              <thead>
+                  <tr>
+                      <th>Seed</th>
+                      <th>Name</th>
+                      <th>Result</th>
+                  </tr>
+              </thead>
+              <tbody>
+              ${data.map(p => `
+                  <tr data-wcaid='${p[3]}'>
+                      <td class="psych-seed">${p[0]}</td>
+                      <td class="psych-name">${p[1]}</td>
+                      <td class="psych-avg">${p[2]}</td>
+                  </tr>`).join('')}
+              </tbody>
+          </table>
+      `;
+
+      psych_div.innerHTML = table;
+      psych_div.style.display = 'inline-block';
+      skeleton.style.display = 'none';
+
+      search_wrapper.style.display = 'block';
+      csv_btn.style.display = 'block';
+
+      if (user_wcaid && Array.from(psych_div.querySelectorAll('tr[data-wcaid]')).some(row => row.dataset.wcaid === user_wcaid)) {
+        show_user_btn.style.display = 'block';
+      } else {
+        show_user_btn.style.display = 'none';
+      }
+
+      advancements = get_advancements(event);
+
+      if (advancements.length === 3) {
+        secondRoundBtn.style.display = 'block';
+        semiRoundBtn.style.display = 'block';
+        finalRoundBtn.style.display = 'block';
+      } else if (advancements.length === 2) {
+        secondRoundBtn.style.display = 'block';
+        finalRoundBtn.style.display = 'block';
+      } else if (advancements.length === 1) {
+        finalRoundBtn.style.display = 'block';
+      }
+    }
+
+    function updateEventButtons(clickedButton) {
+      document.querySelectorAll('.event-button').forEach(button => {
+        button.classList.remove('event-button-selected');
+        button.querySelector('.event-icon').classList.remove('event-icon-selected');
+      });
+
+      clickedButton.classList.add('event-button-selected');
+      clickedButton.querySelector('.event-icon').classList.add('event-icon-selected');
+    }
+
+
+    if (controller) controller.abort();
+    controller = new AbortController();
+
+    psych_div.style.display = 'none';
+    show_user_btn.style.display = 'none';
+    search_wrapper.style.display = 'none';
+    csv_btn.style.display = 'none';
+    secondRoundBtn.style.display = 'none';
+    semiRoundBtn.style.display = 'none';
+    finalRoundBtn.style.display = 'none';
+    skeleton.style.display = 'inline-block';
+    select_event.style.display = 'none';
+
+    updateEventButtons(clicked_button);
+
+    event = selectedEvent;
+
+    solves = document.querySelector(`input[name='solves']`).value;
+    const cacheKey = `${event}|${solves}`;
+
+    if (psychSheetCache[cacheKey]) {
+      renderPsychSheet(psychSheetCache[cacheKey]);
+      return;
+    }
+      
+    try {
+      const response = await fetch("/psych_sheet/{{ comp_id }}", {
+        method: "POST",
+        body: new URLSearchParams({
+          'event': event,
+          'solves': solves,
+          'action': 'psych_sheet'
+        }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: controller.signal
+      });
+
+      const data = await response.json();
+      if (!Array.isArray(data)) return;
+
+      psychSheetCache[cacheKey] = data;
+
+      renderPsychSheet(data);
+    } catch(error) {
+      if (error.name !== 'AbortError') {
+        setTimeout(() => psych_sheet(event), 500);
+      }
+    };
+  }
+
+  function scroll_to_user() {
+    let rows = document.querySelectorAll('.psych-sheet tbody tr');
+    document.querySelectorAll('.user-row').forEach(row => row.classList.remove('user-row'));
+
+    for (let row of rows) {
+      if (row.dataset.wcaid === user_wcaid.trim()) {
+        row.scrollIntoView({ block: 'center', behavior: "smooth" });
+        row.classList.add('user-row');
+        break;
+      }
+    }
+  }
+
+  function download_csv() {
+    const rows = document.querySelectorAll('.psych-sheet table tbody tr');
+
+    const psychSheetData = Array.from(rows, row =>
+      Array.from(row.querySelectorAll('td'), cell => cell.textContent)
+          .slice(0, 3)
+    );
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/psych_sheet/{{ comp_id }}';
+      
+    [['action', 'csv'], ['event', event], ['solves', solves], ['psych_sheet', JSON.stringify(psychSheetData)]].forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const eventButtons = document.querySelectorAll('.event-button');
+    eventButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const event = button.getAttribute('data-event');
+        psych_sheet(event, button);
+      });
+    });
+
+    const input = document.querySelector('.solves');
+
+    const savedValue = localStorage.getItem('solves');
+    if (savedValue) {
+      input.value = savedValue;
+    }
+
+    input.addEventListener("input", function() {
+      localStorage.setItem('solves', this.value);
+    });
+
+    input.addEventListener("blur", function() {
+      localStorage.setItem('solves', this.value);
+    });
+
+    const container = document.querySelector(".competitors-search-div");
+    const icon = container.querySelector(".search_icon");
+
+    function swapIcon(newSrc) {
+      icon.style.opacity = 0.5;
+
+      setTimeout(() => {
+      icon.src = newSrc;
+
+      requestAnimationFrame(() => {
+        icon.style.opacity = 1;
+      });
+      }, 150);
+    }
+
+    container.addEventListener("focusin", () => {
+      swapIcon("../static/Icons/search-teal.svg");
+    });
+
+    container.addEventListener("focusout", () => {
+      swapIcon("../static/Icons/search.svg");
+    });
+  });
+
+  function searchCompetitors() {
+    const rows = document.querySelectorAll('tbody tr');
+    const query = search.value.toLowerCase();
+
+    const visible = [];
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      const name = cells[1].textContent.toLowerCase();
+
+      const match = name.includes(query);
+
+      row.classList.toggle('hide', !match);
+      row.style.backgroundColor = '';
+      cells[0].style.borderBottomLeftRadius = '';
+      cells[2].style.borderBottomRightRadius = '';
+
+      if (match) {
+        visible.push(row);
+
+        if (query === '') {
+          row.style.backgroundColor = '';
+        } else {
+          row.style.backgroundColor = (visible.length % 2 === 1) ? '#11161A' : 'var(--bg)';
+        }
+      }
+    });
+
+    const last = visible.at(-1);
+    const first = visible[0];
+
+    if (last) {
+      const cells = last.querySelectorAll('td');
+      cells[0].style.borderBottomLeftRadius = '20px';
+      cells[2].style.borderBottomRightRadius = '20px';
+    }
+
+    if (first && query !== '') {
+      const headerTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-top'));
+      const thead = document.querySelector('.psych-sheet thead');
+      const theadHeight = thead ? thead.offsetHeight : 0;
+      const offset = headerTop + theadHeight;
+
+      const scrollY = first.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo(0, scrollY);
+    }
+  }
+
+  window.addEventListener("scroll", () => {
+    const el = document.querySelector('.search-wrapper');
+    const header_top = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--header-top')
+    );
+
+    const elTop = el.getBoundingClientRect().top;
+
+    if (elTop <= header_top) {
+      el.classList.add("search-sticky");
+    } else {
+      el.classList.remove("search-sticky");
+    }
+  });
+
+  function viewRound(round) {
+    if (!advancements.length) return;
+
+    const rows = document.querySelectorAll('.psych-sheet tbody tr');
+    rows.forEach(row => row.classList.remove('user-row'));
+
+    const indexMap = { second: 0, semi: 1, final: -1 };
+    const roundIndex = indexMap[round];
+
+    const advancement = advancements.at(roundIndex);
+    let lastValidRow = null;
+
+    for (const row of rows) {
+      const seed = parseInt(row.querySelector('.psych-seed')?.textContent);
+      if (seed <= advancement) {
+        targetRow = row;
+      }
+    }
+
+    void targetRow.offsetWidth;
+    targetRow.classList.add('user-row');
+    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+</script>
+
+{% endblock %}
