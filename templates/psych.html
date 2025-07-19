@@ -16,7 +16,7 @@
     {% endfor %}
 </div>
 
-<button onclick='scroll_to_user({{ session.get("user_data")["wca_id"] | tojson }})' class="show-user">Find Me</button>
+<button onclick='scroll_to_user({{ session.get("user_data").get("wca_id") | tojson }})' class="show-user">Find Me</button>
 
 <div class="header-hider"></div>
 
@@ -82,7 +82,7 @@
 <script>
     let controller = null;
 
-    const user_wcaid = {{ session.get("user_data")["wca_id"] | tojson }};
+    const user_wcaid = {{ session.get("user_data").get("wca_id") }};
 
     const advancement_conditions = {{ advancement_conditions | tojson }};
     let advancements = [];
