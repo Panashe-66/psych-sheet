@@ -2,7 +2,7 @@ from requests import post
 from orjson import loads
 from json_request import get_json
 
-REDIRECT_URI = 'https://psych-sheet.vercel.app/auth'
+REDIRECT_URI = 'https://psych-sheet.vercel.app/oauth'
 CLIENT_ID = 'bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs'
 CLIENT_SECRET = 'z78nXhWnFKVuzY66aYS6nVSKSiayJPkTdtdqordWCkU' #Remove later
 TOKEN_URL = "https://www.worldcubeassociation.org/oauth/token"
