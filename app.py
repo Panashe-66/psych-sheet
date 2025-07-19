@@ -49,7 +49,7 @@ def comps():
 
     session.pop('utc_now', None)
 
-    if session.get('user_data', None):
+    if session.get('user_data'):
         your_comps = get_comps('user', user_id=session['user_data']['user_id'])
     else:
         your_comps = None

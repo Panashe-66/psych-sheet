@@ -198,3 +198,10 @@ def download_csv(psych_sheet):
     csv_file = BytesIO(output.getvalue().encode('utf-8'))
 
     return csv_file
+
+a = {
+    'csp': 'a'
+}
+
+if a.get('csa'):
+    print(a['csa'])
