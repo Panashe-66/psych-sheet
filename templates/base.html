@@ -41,7 +41,7 @@
                 <button class="logout-button" onclick="spinner_animation()">Log Out</button>
             </a>
             <div class="spinner"></div>
-            <img src="{{ session['user_data]['pfp] if session['user_data]['pfp] != 'no pfp' else '../static/Icons/no-pfp.png' }}" class="pfp" width="1" height="1" onclick="toggle_logout()" draggable="false">
+            <img src="{{ session['user_data']['pfp'] if session['user_data']['pfp'] != 'no pfp' else '../static/Icons/no-pfp.png' }}" class="pfp" width="1" height="1" onclick="toggle_logout()" draggable="false">
 
         {% else %}
             <a href="https://www.worldcubeassociation.org/oauth/authorize?client_id=bes-w8tmmAylNkgxN-2OcvrRdOR-m5ooQ9ktrX6zaqs&redirect_uri=https://psych-sheet.vercel.app/auth&response_type=code&state={{ request.url }}" class="login-a">
