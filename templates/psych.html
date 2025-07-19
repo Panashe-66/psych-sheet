@@ -82,7 +82,7 @@
 <script>
     let controller = null;
 
-    const user_wcaid = {{ session.get("user_data", {}).get("wca_id") }};
+    const user_wcaid = {{ session.get("user_data", {}).get("wca_id") | tojson }};
 
     const advancement_conditions = {{ advancement_conditions | tojson }};
     let advancements = [];
