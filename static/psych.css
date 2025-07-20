@@ -499,7 +499,8 @@ img.emoji {
     max-height: 500px;
     width: fit-content;
     margin: 0 auto;
-    overflow: scroll;
+    overflow-y: scroll;
+    overflow-x: hidden;
     display: none;
 
     @media (max-width: 450px) {
